@@ -8,6 +8,11 @@ let point4 = turf.point([-73.993494, 40.729629]);
 let multiPoints = turf.multiPoint([[-73.995044, 40.729716], [-73.994886, 40.729189], [-73.993946, 40.729001], [-73.993494, 40.729629]]);
 let streetLines = getStreetLines(_mapFeatures);
 
+let streetsWalked = {
+    'type': 'FeatureCollection',
+    'features': []
+}
+
 
 //Map setup
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRhemFyIiwiYSI6ImNqdWFrZnk5ODAzbjU0NHBncHMyZ2JpNXUifQ.Kbdt8hM8CJIIryBWPSXczQ';
@@ -17,6 +22,22 @@ const map = new mapboxgl.Map({
     center: [-73.993944, 40.729287],
     zoom: 16.6
 });
+
+// map.on('load', () => {
+//     map.addLayer({
+//         "id": "walkedStreets",
+//         "type": "line",
+//         'paint': {
+//             'line-color': "#50FA7B",
+//         },
+//         'source': {
+//             'type': 'geojson',
+//             'data': streetsWalked
+//         },
+
+//     });
+// });
+
 
 
 //Marker for live location
@@ -50,8 +71,38 @@ function onDrag() {
     //Show the snapped point on the MapBox map
     snappedLocationMarker.setLngLat(turf.getCoords(snapped));
 
+
+    walkStreet(closestLine);
+    showWalkedStreets();
 }
 
+
+function showWalkedStreets() {
+    map.addLayer({
+        "id": "walkedStreets",
+        "type": "line",
+        'paint': {
+            'line-color': "#50FA7B",
+        },
+        'source': {
+            'type': 'geojson',
+            'data': streetsWalked
+        },
+
+    });
+
+
+}
+
+
+
+function walkStreet(street) {
+
+    //If streets is not walked, add it to db.
+    //TODO replace this with API endpoint
+    if (streetsWalked.features.indexOf(street) === -1)
+        streetsWalked.features.push(street);
+}
 
 
 

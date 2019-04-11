@@ -23,20 +23,20 @@ const map = new mapboxgl.Map({
     zoom: 16.6
 });
 
-// map.on('load', () => {
-//     map.addLayer({
-//         "id": "walkedStreets",
-//         "type": "line",
-//         'paint': {
-//             'line-color': "#50FA7B",
-//         },
-//         'source': {
-//             'type': 'geojson',
-//             'data': streetsWalked
-//         },
+map.on('load', () => {
+    map.addLayer({
+        "id": "walkedStreets",
+        "type": "line",
+        'paint': {
+            'line-color': "#50FA7B",
+        },
+        'source': {
+            'type': 'geojson',
+            'data': streetsWalked
+        },
 
-//     });
-// });
+    });
+});
 
 
 
@@ -78,19 +78,8 @@ function onDrag() {
 
 
 function showWalkedStreets() {
-    map.addLayer({
-        "id": "walkedStreets",
-        "type": "line",
-        'paint': {
-            'line-color': "#50FA7B",
-        },
-        'source': {
-            'type': 'geojson',
-            'data': streetsWalked
-        },
 
-    });
-
+    map.getSource('walkedStreets').setData(streetsWalked);
 
 }
 

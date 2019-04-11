@@ -23,18 +23,21 @@ const map = new mapboxgl.Map({
     zoom: 16.6
 });
 
+
+
 map.on('load', () => {
+    //Add the walked streets layer
     map.addLayer({
         "id": "walkedStreets",
         "type": "line",
         'paint': {
-            'line-color': "#50FA7B",
+            'line-color': "rgba(36, 178, 31, 0.6)",
+            'line-width': 8
         },
         'source': {
             'type': 'geojson',
             'data': streetsWalked
         },
-
     });
 });
 
@@ -45,7 +48,6 @@ let liveLocationMarker = new mapboxgl.Marker({ draggable: 'true' })
     .setLngLat(point1.geometry.coordinates)
     .addTo(map);
 
-
 //Marker for snapped location
 let snappedLocationMarker = new mapboxgl.Marker({ "color": "#FA77C3" }).setLngLat([0, 0]).addTo(map);
 //Add event listener for when dragging
@@ -53,7 +55,7 @@ liveLocationMarker.on('drag', onDrag);
 
 //Function executed when dragging. This will get changed to a live location pushed from the phone
 function onDrag() {
-    console.log("Dragging");
+    // console.log("Dragging");
     //get a MapBox object with coordinates
     let liveLocation = liveLocationMarker.getLngLat();
 
@@ -77,14 +79,14 @@ function onDrag() {
 }
 
 
+//Update the layer data to show the saved streets
 function showWalkedStreets() {
-
     map.getSource('walkedStreets').setData(streetsWalked);
-
 }
 
 
 
+//Save street in walked database
 function walkStreet(street) {
 
     //If streets is not walked, add it to db.
@@ -122,14 +124,14 @@ function closestLineToPoint(_point, _mapFeatures) {
 
     turf.featureEach(streetLines, (currentLine, lineIndex) => {
         let currentDistance = turf.pointToLineDistance(_point, currentLine, { 'units': 'meters' });
-        console.log(`Distance_>   ${currentDistance} para ${currentLine.properties.name}`);
+        // console.log(`Distance_>   ${currentDistance} para ${currentLine.properties.name}`);
         if (currentDistance < shortestDistance) {
             closestLine = currentLine;
             shortestDistance = currentDistance;
         }
     });
 
-    console.log(`Closest->   ${closestLine.properties.name}`);
+    // console.log(`Closest->   ${closestLine.properties.name}`);
     return closestLine;
 
 

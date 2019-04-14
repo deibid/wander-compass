@@ -2,6 +2,8 @@
 
 //Distance in meters between a location point and the center of the street to count it as walked
 const TOLERANCE_RADIUS_FOR_STREET_WALKED = 2.5;
+//Size of the hotspots at every intersection
+const RADIUS_FOR_INTERSECTION_BUFFER = 10 / 1000;
 
 let point1 = turf.point([-73.995044, 40.729716]);
 let point2 = turf.point([-73.994886, 40.729189]);
@@ -77,13 +79,8 @@ map.on('load', () => {
         },
         'paint': {
 
-            // 'circle-color': "#000000",
-            // 'circle-radius': {
-            //     'base': 5,
-            //     'stops': [[12, 5], [22, 20]]
-            // },
-
-            // 'circle-opacity': 0.5
+            'fill-color': "#000000",
+            'fill-opacity': 0.5
 
         }
     })
@@ -142,12 +139,12 @@ function showIntersectionBuffers(closetLine) {
     let pointA = turf.point(turf.getCoords(closetLine)[0]);
     let pointB = turf.point(turf.getCoords(closetLine)[1]);
 
-    console.log(`Point A   ${toString(pointA)}`);
+    // console.log(`Point A   ${toString(pointA)}`);
 
-    let bufferA = turf.buffer(pointA, 0.005, { 'units': 'kilometers' });
-    let bufferB = turf.buffer(pointB, 0.005, { 'units': 'kilometers' });
+    let bufferA = turf.buffer(pointA, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
+    let bufferB = turf.buffer(pointB, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
 
-    console.log(`bufferA    ${toString(bufferA)}`);
+    // console.log(`bufferA    ${toString(bufferA)}`);
 
     var result = turf.featureCollection([bufferA, bufferB]);
 
@@ -193,6 +190,7 @@ map.on('click', (e) => {
     i++;
     if (i >= points.length)
         i = 0;
+
     let closestLine = closestLineToPoint(p, _mapFeatures);
     let snapped = turf.nearestPointOnLine(closestLine, p, { 'units': 'meters' });
 
@@ -210,17 +208,13 @@ function closestLineToPoint(_point, _mapFeatures) {
 
     turf.featureEach(streetLines, (currentLine, lineIndex) => {
         let currentDistance = turf.pointToLineDistance(_point, currentLine, { 'units': 'meters' });
-        // console.log(`Distance_ > ${ currentDistance } para ${ currentLine.properties.name }`);
         if (currentDistance < shortestDistance) {
             closestLine = currentLine;
             shortestDistance = currentDistance;
         }
     });
 
-    // console.log(`Closest -> ${ closestLine.properties.name }`);
     return closestLine;
-
-
 }
 
 
@@ -249,6 +243,5 @@ function toString(Object) {
 
 function distanceBetween(point1, point2) {
     let distance = turf.distance(point1, point2, { options: 'kilometers' }) * 1000;
-    // console.log(`Distance is   ${ distance }`);
     return distance;
 }

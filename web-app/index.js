@@ -12,6 +12,7 @@ let point4 = turf.point([-73.993494, 40.729629]);
 
 let multiPoints = turf.multiPoint([[-73.995044, 40.729716], [-73.994886, 40.729189], [-73.993946, 40.729001], [-73.993494, 40.729629]]);
 let streetLines = getStreetLines(_mapFeatures);
+let intersections = getIntersections(_mapFeatures);
 
 let streetsWalked = {
     'type': 'FeatureCollection',
@@ -131,6 +132,23 @@ function onDrag() {
     showStreetCenter(lineCenter);
     showWalkedStreets();
     showIntersectionBuffers(closestLine);
+    getContainingBuffer(snappedLocation)
+
+
+}
+
+function getContainingBuffer(snappedLocation) {
+
+    let bufferA = activeIntersectionBuffers.features[0];
+    let bufferB = activeIntersectionBuffers.features[1];
+
+    let insideA = turf.booleanContains(bufferA, snappedLocation);
+    let insideB = turf.booleanContains(bufferB, snappedLocation);
+
+
+    console.log(`Location is inside bufferA ${insideA}`);
+    console.log(`Location is inside bufferB ${insideB}`);
+
 }
 
 
@@ -143,6 +161,8 @@ function showIntersectionBuffers(closetLine) {
 
     let bufferA = turf.buffer(pointA, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
     let bufferB = turf.buffer(pointB, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
+    bufferA.properties.name = closetLine.properties.name + "A";
+    bufferB.properties.name = closetLine.properties.name + "B";
 
     // console.log(`bufferA    ${toString(bufferA)}`);
 
@@ -233,6 +253,23 @@ function getStreetLines(_mapFeatures) {
     });
 
     return streetLines;
+}
+
+function getIntersections(_mapFeatures) {
+
+    let intersections = {
+        'features': [],
+        'type': "FeatureCollection"
+    }
+
+    turf.featureEach(_mapFeatures, (currentFeature, featureIndex) => {
+
+        if (turf.getType(currentFeature) === 'Point') {
+            streetLines.features.push(currentFeature);
+        }
+    });
+
+    return intersections;
 }
 
 

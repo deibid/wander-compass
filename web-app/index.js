@@ -265,7 +265,7 @@ function getIntersections(_mapFeatures) {
     turf.featureEach(_mapFeatures, (currentFeature, featureIndex) => {
 
         if (turf.getType(currentFeature) === 'Point') {
-            streetLines.features.push(currentFeature);
+            intersections.features.push(currentFeature);
         }
     });
 

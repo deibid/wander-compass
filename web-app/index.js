@@ -1,5 +1,8 @@
 // let bbox = turf.bbox(features);
 
+//Distance in meters between a location point and the center of the street to count it as walked
+const TOLERANCE_RADIUS_FOR_STREET_WALKED = 2.5;
+
 let point1 = turf.point([-73.995044, 40.729716]);
 let point2 = turf.point([-73.994886, 40.729189]);
 let point3 = turf.point([-73.993946, 40.729001]);
@@ -11,6 +14,14 @@ let streetLines = getStreetLines(_mapFeatures);
 let streetsWalked = {
     'type': 'FeatureCollection',
     'features': []
+}
+
+let activeStreetCenter = {
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": []
+    },
 }
 
 
@@ -39,6 +50,19 @@ map.on('load', () => {
             'data': streetsWalked
         },
     });
+
+
+    map.addLayer({
+        'id': 'streetCenter',
+        'type': 'symbol',
+        'source': {
+            'type': 'geojson',
+            'data': activeStreetCenter
+        },
+        'layout': {
+            'icon-image': 'hospital-15'
+        },
+    });
 });
 
 
@@ -52,6 +76,8 @@ let liveLocationMarker = new mapboxgl.Marker({ draggable: 'true' })
 let snappedLocationMarker = new mapboxgl.Marker({ "color": "#FA77C3" }).setLngLat([0, 0]).addTo(map);
 //Add event listener for when dragging
 liveLocationMarker.on('drag', onDrag);
+
+
 
 //Function executed when dragging. This will get changed to a live location pushed from the phone
 function onDrag() {
@@ -68,16 +94,31 @@ function onDrag() {
     //Get the closest line on a MapBox street from the Point
     let closestLine = closestLineToPoint(liveLocationPoint, _mapFeatures);
     //Find the nearest point inside a street to snap to
-    let snapped = turf.nearestPointOnLine(closestLine, liveLocationPoint, { 'units': 'meters' });
+    let snappedLocation = turf.nearestPointOnLine(closestLine, liveLocationPoint, { 'units': 'meters' });
 
     //Show the snapped point on the MapBox map
-    snappedLocationMarker.setLngLat(turf.getCoords(snapped));
+    snappedLocationMarker.setLngLat(turf.getCoords(snappedLocation));
 
+    let lineCenter = turf.center(closestLine);
+    // console.log(`El centro de ${toString(closestLine)} es ${toString(lineCenter)}`);
 
-    walkStreet(closestLine);
+    if (Math.abs(distanceBetween(lineCenter, snappedLocation)) < TOLERANCE_RADIUS_FOR_STREET_WALKED) {
+        walkStreet(closestLine);
+
+    }
+    showStreetCenter(lineCenter);
     showWalkedStreets();
 }
 
+
+
+
+function showStreetCenter(point) {
+
+    activeStreetCenter.geometry.coordinates = turf.getCoord(point);
+    map.getSource('streetCenter').setData(activeStreetCenter);
+
+}
 
 //Update the layer data to show the saved streets
 function showWalkedStreets() {
@@ -153,4 +194,16 @@ function getStreetLines(_mapFeatures) {
     });
 
     return streetLines;
+}
+
+
+
+function toString(Object) {
+    return JSON.stringify(Object, null, null);
+}
+
+function distanceBetween(point1, point2) {
+    let distance = turf.distance(point1, point2, { options: 'kilometers' }) * 1000;
+    // console.log(`Distance is   ${distance}`);
+    return distance;
 }

@@ -23,7 +23,10 @@ let activeStreetCenter = {
         "coordinates": []
     },
 }
-
+let activeIntersectionBuffers = {
+    'type': 'FeatureCollection',
+    'features': []
+}
 
 //Map setup
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRhemFyIiwiYSI6ImNqdWFrZnk5ODAzbjU0NHBncHMyZ2JpNXUifQ.Kbdt8hM8CJIIryBWPSXczQ';
@@ -63,6 +66,27 @@ map.on('load', () => {
             'icon-image': 'hospital-15'
         },
     });
+
+
+    map.addLayer({
+        'id': 'intersectionBuffers',
+        'type': 'fill',
+        'source': {
+            'type': 'geojson',
+            'data': activeIntersectionBuffers
+        },
+        'paint': {
+
+            // 'circle-color': "#000000",
+            // 'circle-radius': {
+            //     'base': 5,
+            //     'stops': [[12, 5], [22, 20]]
+            // },
+
+            // 'circle-opacity': 0.5
+
+        }
+    })
 });
 
 
@@ -106,11 +130,32 @@ function onDrag() {
         walkStreet(closestLine);
 
     }
+
     showStreetCenter(lineCenter);
     showWalkedStreets();
+    showIntersectionBuffers(closestLine);
 }
 
 
+function showIntersectionBuffers(closetLine) {
+
+    let pointA = turf.point(turf.getCoords(closetLine)[0]);
+    let pointB = turf.point(turf.getCoords(closetLine)[1]);
+
+    console.log(`Point A   ${toString(pointA)}`);
+
+    let bufferA = turf.buffer(pointA, 0.005, { 'units': 'kilometers' });
+    let bufferB = turf.buffer(pointB, 0.005, { 'units': 'kilometers' });
+
+    console.log(`bufferA    ${toString(bufferA)}`);
+
+    var result = turf.featureCollection([bufferA, bufferB]);
+
+    activeIntersectionBuffers = result;
+
+    map.getSource('intersectionBuffers').setData(activeIntersectionBuffers);
+
+}
 
 
 function showStreetCenter(point) {
@@ -165,14 +210,14 @@ function closestLineToPoint(_point, _mapFeatures) {
 
     turf.featureEach(streetLines, (currentLine, lineIndex) => {
         let currentDistance = turf.pointToLineDistance(_point, currentLine, { 'units': 'meters' });
-        // console.log(`Distance_>   ${currentDistance} para ${currentLine.properties.name}`);
+        // console.log(`Distance_ > ${ currentDistance } para ${ currentLine.properties.name }`);
         if (currentDistance < shortestDistance) {
             closestLine = currentLine;
             shortestDistance = currentDistance;
         }
     });
 
-    // console.log(`Closest->   ${closestLine.properties.name}`);
+    // console.log(`Closest -> ${ closestLine.properties.name }`);
     return closestLine;
 
 
@@ -204,6 +249,6 @@ function toString(Object) {
 
 function distanceBetween(point1, point2) {
     let distance = turf.distance(point1, point2, { options: 'kilometers' }) * 1000;
-    // console.log(`Distance is   ${distance}`);
+    // console.log(`Distance is   ${ distance }`);
     return distance;
 }

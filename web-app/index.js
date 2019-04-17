@@ -5,30 +5,30 @@ const TOLERANCE_RADIUS_FOR_STREET_WALKED = 2.5;
 const RADIUS_FOR_INTERSECTION_BUFFER = 20 / 1000;
 
 let point1 = turf.point([-73.995044, 40.729716]);
-let point2 = turf.point([-73.994886, 40.729189]);
-let point3 = turf.point([-73.993946, 40.729001]);
-let point4 = turf.point([-73.993494, 40.729629]);
+// let point2 = turf.point([-73.994886, 40.729189]);
+// let point3 = turf.point([-73.993946, 40.729001]);
+// let point4 = turf.point([-73.993494, 40.729629]);
 
-let multiPoints = turf.multiPoint([[-73.995044, 40.729716], [-73.994886, 40.729189], [-73.993946, 40.729001], [-73.993494, 40.729629]]);
-let streetLines = getStreetLines(_mapFeatures);
-let intersections = getIntersections(_mapFeatures);
+// let multiPoints = turf.multiPoint([[-73.995044, 40.729716], [-73.994886, 40.729189], [-73.993946, 40.729001], [-73.993494, 40.729629]]);
+let mStreetLines = getStreetLines(_mapFeatures);
+let mIntersections = getIntersections(_mapFeatures);
 
-let activeBuffer;
-let prevActiveBuffer = false;
+let mActiveBuffer;
+let mWasInBuffer = false;
 
-let streetsWalked = {
+let mStreetsWalked = {
     'type': 'FeatureCollection',
     'features': []
 }
 
-let activeStreetCenter = {
+let mActiveStreetCenter = {
     "type": "Feature",
     "geometry": {
         "type": "Point",
         "coordinates": []
     },
 }
-let activeIntersectionBuffers = {
+let mActiveIntersectionBuffers = {
     'type': 'FeatureCollection',
     'features': []
 }
@@ -54,7 +54,7 @@ map.on('load', () => {
         },
         'source': {
             'type': 'geojson',
-            'data': streetsWalked
+            'data': mStreetsWalked
         },
     });
 
@@ -64,7 +64,7 @@ map.on('load', () => {
         'type': 'symbol',
         'source': {
             'type': 'geojson',
-            'data': activeStreetCenter
+            'data': mActiveStreetCenter
         },
         'layout': {
             'icon-image': 'hospital-15'
@@ -77,7 +77,7 @@ map.on('load', () => {
         'type': 'fill',
         'source': {
             'type': 'geojson',
-            'data': activeIntersectionBuffers
+            'data': mActiveIntersectionBuffers
         },
         'paint': {
 
@@ -97,14 +97,14 @@ let liveLocationMarker = new mapboxgl.Marker({ draggable: 'true' })
 
 //Marker for snapped location
 let snappedLocationMarker = new mapboxgl.Marker({ "color": "#FA77C3" }).setLngLat([0, 0]).addTo(map);
-//Add event listener for when dragging
-liveLocationMarker.on('drag', onDrag);
+//Add event listener for when dragging or receiving location from server
+liveLocationMarker.on('drag', onNewLocation);
 
 
 
 //Function executed when dragging. This will get changed to a live location pushed from the phone
-function onDrag() {
-    // console.log("Dragging");
+function onNewLocation() {
+
     //get a MapBox object with coordinates
     let liveLocation = liveLocationMarker.getLngLat();
 
@@ -115,67 +115,107 @@ function onDrag() {
 
 
     //Get the closest line on a MapBox street from the Point
-    let closestLine = closestLineToPoint(liveLocationPoint, _mapFeatures);
     //Find the nearest point inside a street to snap to
-    let snappedLocation = turf.nearestPointOnLine(closestLine, liveLocationPoint, { 'units': 'meters' });
+    let closestStreet = closestLineToPoint(liveLocationPoint, _mapFeatures);
+    let snappedLocation = turf.nearestPointOnLine(closestStreet, liveLocationPoint, { 'units': 'meters' });
+
 
     //Show the snapped point on the MapBox map
     snappedLocationMarker.setLngLat(turf.getCoords(snappedLocation));
 
-    let lineCenter = turf.center(closestLine);
-    // console.log(`El centro de ${toString(closestLine)} es ${toString(lineCenter)}`);
+
+    let lineCenter = turf.center(closestStreet);
+    showStreetCenter(lineCenter);
 
     if (Math.abs(distanceBetween(lineCenter, snappedLocation)) < TOLERANCE_RADIUS_FOR_STREET_WALKED) {
-        walkStreet(closestLine);
+        walkStreet(closestStreet);
     }
 
-
-    showStreetCenter(lineCenter);
     showWalkedStreets();
 
-    findIntersectionBuffers(closestLine);
-    showIntersectionBuffers(closestLine);
+    findIntersectionBuffers(closestStreet);
+    showIntersectionBuffers(closestStreet);
 
-    let containingBuffer = findContainingBuffer(snappedLocation, closestLine);
+    let containingBuffer = findContainingBuffer(snappedLocation);
 
-    if (!prevActiveBuffer && containingBuffer !== undefined) {
+    //Enter buffer
+    if (!mWasInBuffer && containingBuffer !== undefined) {
         console.log(`Entered Buffer ${toString(containingBuffer)}`);
-        prevActiveBuffer = true;
+
+
+        // let streetsWalkedNames = getWalkedStreetNames();
+        // let possibleStreetsNames = getPossibleStreetsNames(containingBuffer);
+        // let availableStreets = getAvailableStreets(streetsWalkedNames, possibleStreetsNames);
+        let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, containingBuffer);
+
+
+
+        mWasInBuffer = true;
     }
 
-    if (prevActiveBuffer && containingBuffer === undefined) {
+    //Exit buffer
+    if (mWasInBuffer && containingBuffer === undefined) {
         console.log(`Exited Buffer`);
-        prevActiveBuffer = false;
+        mWasInBuffer = false;
     }
+}
+
+function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
+
+
+    let availableStreets = [];
+
+    let streetNamesAtIntersection = containingBuffer.properties.streets;
+    streetNamesAtIntersection.forEach(name => {
+        let street = getStreetByName(name);
+        availableStreets.push(street);
+    });
 
 
 
+    let temp = availableStreets.filter(street => !mStreetsWalked.features.includes(street));
+    console.log(`Las calles NO caminadas para la interseccion ${containingBuffer.properties.name} son:__>   \n${toString(temp)}`);
 
 
+}
 
+function getStreetsForIntersection(containingBuffer) {
 
 
 
 }
 
-function getAvailableStreets() {
+function getPossibleStreetsNames(containingBuffer) {
 
-    activeBuffer;
-    intersections;
-    streetsWalked;
+    return containingBuffer.properties.streets;
+
+
+}
+
+function getWalkedStreetNames() {
+
+    let streetsWalked_Names = [];
+    mStreetsWalked.featureEach((street, index) => {
+        streetsWalked_Names.push(street.properties.name);
+    });
+
+    return streetsWalked_Names;
+
+}
+function getAvailableStreets() {
 
     let streetsWalkedNames = [];
 
-    turf.featureEach(streetsWalked, (currentFeature, futureIndex) => {
+    turf.featureEach(mStreetsWalked, (currentFeature, futureIndex) => {
         console.log(`Esta calle ya se camino ${toString(currentFeature)}`);
         let name = currentFeature.properties.name;
         if (streetsWalkedNames.indexOf(name) === -1)
             streetsWalkedNames.push(currentFeature.properties.name);
     });
 
-    let availableStreetsForIntersection = activeBuffer.properties.streets;
+    let availableStreetsForIntersection = mActiveBuffer.properties.streets;
     let streetsNotWalked = availableStreetsForIntersection.filter(streetName => streetsWalkedNames.indexOf(streetName) !== 1);
-    console.log(`Las calles disponibles para la interseccion ${activeBuffer.properties.name} son: ${streetsNotWalked}`);
+    console.log(`Las calles disponibles para la interseccion ${mActiveBuffer.properties.name} son: ${streetsNotWalked}`);
 
 
 
@@ -183,14 +223,13 @@ function getAvailableStreets() {
 }
 
 
-function findContainingBuffer(snappedLocation, closesLine) {
+function findContainingBuffer(snappedLocation) {
 
-    let bufferA = activeIntersectionBuffers.features[0];
-    let bufferB = activeIntersectionBuffers.features[1];
+    let bufferA = mActiveIntersectionBuffers.features[0];
+    let bufferB = mActiveIntersectionBuffers.features[1];
 
     let insideA = turf.booleanContains(bufferA, snappedLocation);
     let insideB = turf.booleanContains(bufferB, snappedLocation);
-
 
 
     if (insideA) {
@@ -201,58 +240,15 @@ function findContainingBuffer(snappedLocation, closesLine) {
         return undefined;
     }
 
-    // if (!prevActiveBuffer && activeBuffer !== undefined) {
-    //     let intersection = activeBuffer.properties.name;
-    //     let walkingFrom = activeBuffer.properties.walkingFrom;
-    //     console.log(`Entered  buffer ${intersection} walking from ${walkingFrom}`);
-    //     getAvailableStreets();
-    //     prevActiveBuffer = true;
-    // }
-
-    //---------
-
-
-
-    // let bufferA = activeIntersectionBuffers.features[0];
-    // let bufferB = activeIntersectionBuffers.features[1];
-
-    // let insideA = turf.booleanContains(bufferA, snappedLocation);
-    // let insideB = turf.booleanContains(bufferB, snappedLocation);
-
-
-
-    // if (insideA) {
-    //     activeBuffer = bufferA;
-    // } else if (insideB) {
-    //     activeBuffer = bufferB;
-    // } else {
-    //     if (prevActiveBuffer) {
-    //         let intersection = activeBuffer.properties.name;
-
-    //         console.log(`Exited  buffer ${intersection}`);
-    //         activeBuffer = undefined;
-    //         prevActiveBuffer = false;
-    //     }
-    // }
-
-    // if (!prevActiveBuffer && activeBuffer !== undefined) {
-    //     let intersection = activeBuffer.properties.name;
-    //     let walkingFrom = activeBuffer.properties.walkingFrom;
-    //     console.log(`Entered  buffer ${intersection} walking from ${walkingFrom}`);
-    //     getAvailableStreets();
-    //     prevActiveBuffer = true;
-    // }
-
-
 }
 
-function findIntersectionBuffers(closestLine) {
+function findIntersectionBuffers(street) {
 
     //find the Points from the collection that match the street that is being walked
-    let streetIntersections = getIntersectionsForStreet(closestLine);
+    let streetIntersections = getIntersectionsForStreet(street);
 
-    let pointA = streetIntersections[0];//turf.point(turf.getCoords(closestLine)[0]);
-    let pointB = streetIntersections[1];//turf.point(turf.getCoords(closestLine)[1]);
+    let pointA = streetIntersections[0];
+    let pointB = streetIntersections[1];
 
     // console.log(`Antes de hacer el buffer. Los puntos son: __> ${toString(pointA)} \n y ${toString(pointB)}`)
 
@@ -263,50 +259,44 @@ function findIntersectionBuffers(closestLine) {
 
     let result = turf.featureCollection([bufferA, bufferB]);
 
-    activeIntersectionBuffers = result;
+    mActiveIntersectionBuffers = result;
+
 
 }
 
 
-function showIntersectionBuffers(closestLine) {
-    map.getSource('intersectionBuffers').setData(activeIntersectionBuffers);
+function showIntersectionBuffers() {
+    map.getSource('intersectionBuffers').setData(mActiveIntersectionBuffers);
 }
 
-function getIntersectionsForStreet(closestLine) {
+/**
+ * Finds the two Point features that correspond to that street
+ * @param {Street being walked} street 
+ */
+function getIntersectionsForStreet(street) {
 
-
-    // console.log(`Availbale intersctions are____>>>> ${toString(intersections)}`)
-    let streetName = closestLine.properties.name;
+    let streetName = street.properties.name;
     let streetIntersections = [];
-    intersections.features.forEach(intersection => {
-        // console.log("Dentro del loop");
-        // console.log(`Estoy comparando ${toString(intersection)} con ${streetName} `);
+    mIntersections.features.forEach(intersection => {
         if (intersection.properties.streets.indexOf(streetName) !== -1) {
-            // console.log("Pasa la prueba");
             streetIntersections.push(intersection);
         };
     });
 
-    // console.log(`Para la calle ${streetName}, las intersecciones posibles son: ${toString(streetIntersections)}`);
     return streetIntersections;
-
-
-
-
-
 }
 
 
 function showStreetCenter(point) {
 
-    activeStreetCenter.geometry.coordinates = turf.getCoord(point);
-    map.getSource('streetCenter').setData(activeStreetCenter);
+    mActiveStreetCenter.geometry.coordinates = turf.getCoord(point);
+    map.getSource('streetCenter').setData(mActiveStreetCenter);
 
 }
 
 //Update the layer data to show the saved streets
 function showWalkedStreets() {
-    map.getSource('walkedStreets').setData(streetsWalked);
+    map.getSource('walkedStreets').setData(mStreetsWalked);
 }
 
 
@@ -316,30 +306,30 @@ function walkStreet(street) {
 
     //If streets is not walked, add it to db.
     //TODO replace this with API endpoint
-    if (streetsWalked.features.indexOf(street) === -1)
-        streetsWalked.features.push(street);
+    if (mStreetsWalked.features.indexOf(street) === -1)
+        mStreetsWalked.features.push(street);
 }
 
 
 
 
-let i = 0;
-let points = turf.getCoords(multiPoints);
+// let i = 0;
+// let points = turf.getCoords(multiPoints);
 
-map.on('click', (e) => {
-    let p = points[i];
-    liveLocationMarker.setLngLat(p);
-    i++;
-    if (i >= points.length)
-        i = 0;
+// map.on('click', (e) => {
+//     let p = points[i];
+//     liveLocationMarker.setLngLat(p);
+//     i++;
+//     if (i >= points.length)
+//         i = 0;
 
-    let closestLine = closestLineToPoint(p, _mapFeatures);
-    let snapped = turf.nearestPointOnLine(closestLine, p, { 'units': 'meters' });
+//     let closestLine = closestLineToPoint(p, _mapFeatures);
+//     let snapped = turf.nearestPointOnLine(closestLine, p, { 'units': 'meters' });
 
-    snappedLocationMarker.setLngLat(turf.getCoords(snapped));
+//     snappedLocationMarker.setLngLat(turf.getCoords(snapped));
 
 
-});
+// });
 
 
 function closestLineToPoint(_point, _mapFeatures) {
@@ -348,7 +338,7 @@ function closestLineToPoint(_point, _mapFeatures) {
     let shortestDistance = 1000;
 
 
-    turf.featureEach(streetLines, (currentLine, lineIndex) => {
+    turf.featureEach(mStreetLines, (currentLine, lineIndex) => {
         let currentDistance = turf.pointToLineDistance(_point, currentLine, { 'units': 'meters' });
         if (currentDistance < shortestDistance) {
             closestLine = currentLine;
@@ -357,6 +347,26 @@ function closestLineToPoint(_point, _mapFeatures) {
     });
 
     return closestLine;
+}
+
+
+
+
+function getStreetByName(name) {
+
+
+    let street;
+    mStreetLines.features.forEach(_street => {
+        // console.log(`Probando ${toString(_street)}`)
+        if (_street.properties.name === name) {
+            // console.log(`Paso la prueba`);
+            street = _street;
+        }
+    });
+
+    return street;
+
+
 }
 
 

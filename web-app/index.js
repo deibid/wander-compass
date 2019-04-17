@@ -2,8 +2,9 @@
 
 //Distance in meters between a location point and the center of the street to count it as walked
 const TOLERANCE_RADIUS_FOR_STREET_WALKED = 2.5;
-//Size of the hotspots at every intersection
-const RADIUS_FOR_INTERSECTION_BUFFER = 10 / 1000;
+
+//Size of the hotspots at every intersection in meters
+const RADIUS_FOR_INTERSECTION_BUFFER = 20 / 1000;
 
 let point1 = turf.point([-73.995044, 40.729716]);
 let point2 = turf.point([-73.994886, 40.729189]);
@@ -13,6 +14,9 @@ let point4 = turf.point([-73.993494, 40.729629]);
 let multiPoints = turf.multiPoint([[-73.995044, 40.729716], [-73.994886, 40.729189], [-73.993946, 40.729001], [-73.993494, 40.729629]]);
 let streetLines = getStreetLines(_mapFeatures);
 let intersections = getIntersections(_mapFeatures);
+
+let activeBuffer;
+let prevActiveBuffer = false;
 
 let streetsWalked = {
     'type': 'FeatureCollection',
@@ -146,8 +150,27 @@ function getContainingBuffer(snappedLocation) {
     let insideB = turf.booleanContains(bufferB, snappedLocation);
 
 
-    console.log(`Location is inside bufferA ${insideA}`);
-    console.log(`Location is inside bufferB ${insideB}`);
+
+    if (insideA) {
+        activeBuffer = bufferA;
+    } else if (insideB) {
+        activeBuffer = bufferB;
+    } else {
+        if (prevActiveBuffer) {
+            console.log("Exited Buffer");
+            activeBuffer = undefined;
+            prevActiveBuffer = false;
+        }
+    }
+
+    if (!prevActiveBuffer && activeBuffer !== undefined) {
+        console.log(`Entered  buffer ${toString(activeBuffer)}`);
+        prevActiveBuffer = true;
+    }
+
+
+
+
 
 }
 

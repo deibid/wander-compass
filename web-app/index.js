@@ -1,5 +1,3 @@
-// let bbox = turf.bbox(features);
-
 //Distance in meters between a location point and the center of the street to count it as walked
 const TOLERANCE_RADIUS_FOR_STREET_WALKED = 2.5;
 
@@ -43,14 +41,6 @@ const map = new mapboxgl.Map({
     center: [-73.993944, 40.729499],
     zoom: 16.6
 });
-
-// mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRhemFyIiwiYSI6ImNqdWFrZnk5ODAzbjU0NHBncHMyZ2JpNXUifQ.Kbdt8hM8CJIIryBWPSXczQ';
-// const map = new mapboxgl.Map({
-//     container: 'map',
-//     style: 'mapbox://styles/davidazar/cjukkxnww88nb1fqtgh1ovfmj',
-//     center: [2.317600, 48.866500],
-//     zoom: 12.0
-// });
 
 
 map.on('load', () => {
@@ -137,18 +127,63 @@ function onDrag() {
 
     if (Math.abs(distanceBetween(lineCenter, snappedLocation)) < TOLERANCE_RADIUS_FOR_STREET_WALKED) {
         walkStreet(closestLine);
-
     }
+
 
     showStreetCenter(lineCenter);
     showWalkedStreets();
+
+    findIntersectionBuffers(closestLine);
     showIntersectionBuffers(closestLine);
-    getContainingBuffer(snappedLocation)
+
+    let containingBuffer = findContainingBuffer(snappedLocation, closestLine);
+
+    if (!prevActiveBuffer && containingBuffer !== undefined) {
+        console.log(`Entered Buffer ${toString(containingBuffer)}`);
+        prevActiveBuffer = true;
+    }
+
+    if (prevActiveBuffer && containingBuffer === undefined) {
+        console.log(`Exited Buffer`);
+        prevActiveBuffer = false;
+    }
+
+
+
+
+
+
+
 
 
 }
 
-function getContainingBuffer(snappedLocation) {
+function getAvailableStreets() {
+
+    activeBuffer;
+    intersections;
+    streetsWalked;
+
+    let streetsWalkedNames = [];
+
+    turf.featureEach(streetsWalked, (currentFeature, futureIndex) => {
+        console.log(`Esta calle ya se camino ${toString(currentFeature)}`);
+        let name = currentFeature.properties.name;
+        if (streetsWalkedNames.indexOf(name) === -1)
+            streetsWalkedNames.push(currentFeature.properties.name);
+    });
+
+    let availableStreetsForIntersection = activeBuffer.properties.streets;
+    let streetsNotWalked = availableStreetsForIntersection.filter(streetName => streetsWalkedNames.indexOf(streetName) !== 1);
+    console.log(`Las calles disponibles para la interseccion ${activeBuffer.properties.name} son: ${streetsNotWalked}`);
+
+
+
+
+}
+
+
+function findContainingBuffer(snappedLocation, closesLine) {
 
     let bufferA = activeIntersectionBuffers.features[0];
     let bufferB = activeIntersectionBuffers.features[1];
@@ -159,56 +194,105 @@ function getContainingBuffer(snappedLocation) {
 
 
     if (insideA) {
-        activeBuffer = bufferA;
+        return bufferA;
     } else if (insideB) {
-        activeBuffer = bufferB;
+        return bufferB;
     } else {
-        if (prevActiveBuffer) {
-            let intersection = activeBuffer.properties.name;
-
-            console.log(`Exited  buffer ${intersection}`);
-            activeBuffer = undefined;
-            prevActiveBuffer = false;
-        }
+        return undefined;
     }
 
-    if (!prevActiveBuffer && activeBuffer !== undefined) {
-        let intersection = activeBuffer.properties.name;
-        let walkingFrom = activeBuffer.properties.walkingFrom;
-        console.log(`Entered  buffer ${intersection} walking from ${walkingFrom}`);
+    // if (!prevActiveBuffer && activeBuffer !== undefined) {
+    //     let intersection = activeBuffer.properties.name;
+    //     let walkingFrom = activeBuffer.properties.walkingFrom;
+    //     console.log(`Entered  buffer ${intersection} walking from ${walkingFrom}`);
+    //     getAvailableStreets();
+    //     prevActiveBuffer = true;
+    // }
 
-        prevActiveBuffer = true;
-    }
+    //---------
+
+
+
+    // let bufferA = activeIntersectionBuffers.features[0];
+    // let bufferB = activeIntersectionBuffers.features[1];
+
+    // let insideA = turf.booleanContains(bufferA, snappedLocation);
+    // let insideB = turf.booleanContains(bufferB, snappedLocation);
+
+
+
+    // if (insideA) {
+    //     activeBuffer = bufferA;
+    // } else if (insideB) {
+    //     activeBuffer = bufferB;
+    // } else {
+    //     if (prevActiveBuffer) {
+    //         let intersection = activeBuffer.properties.name;
+
+    //         console.log(`Exited  buffer ${intersection}`);
+    //         activeBuffer = undefined;
+    //         prevActiveBuffer = false;
+    //     }
+    // }
+
+    // if (!prevActiveBuffer && activeBuffer !== undefined) {
+    //     let intersection = activeBuffer.properties.name;
+    //     let walkingFrom = activeBuffer.properties.walkingFrom;
+    //     console.log(`Entered  buffer ${intersection} walking from ${walkingFrom}`);
+    //     getAvailableStreets();
+    //     prevActiveBuffer = true;
+    // }
+
 
 }
 
+function findIntersectionBuffers(closestLine) {
 
-function showIntersectionBuffers(closestLine) {
+    //find the Points from the collection that match the street that is being walked
+    let streetIntersections = getIntersectionsForStreet(closestLine);
 
-    let pointA = turf.point(turf.getCoords(closestLine)[0]);
-    let pointB = turf.point(turf.getCoords(closestLine)[1]);
+    let pointA = streetIntersections[0];//turf.point(turf.getCoords(closestLine)[0]);
+    let pointB = streetIntersections[1];//turf.point(turf.getCoords(closestLine)[1]);
 
-    // console.log(`Point A   ${toString(pointA)}`);
+    // console.log(`Antes de hacer el buffer. Los puntos son: __> ${toString(pointA)} \n y ${toString(pointB)}`)
+
 
     let bufferA = turf.buffer(pointA, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
     let bufferB = turf.buffer(pointB, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
-    bufferA.properties.name = closestLine.properties.name; //+A
-    bufferB.properties.name = closestLine.properties.name;//+B
-    bufferA.properties.walkingFrom = closestLine.properties.name;
-    bufferB.properties.walkingFrom = closestLine.properties.name;
 
-    //TODO: el problema es que no hay forma de diferenciar que buffer es. Debemos de nombrar los buffers de manera unica
-    //Con el approach que tenemos ahorita, los buffers se nombran en base a la calle en la que estan y la direccion en la que los agarré
-    //Como vamos a identificar cada buffer cuando expandamos?
-
-
-    // console.log(`bufferA    ${toString(bufferA)}`);
 
     let result = turf.featureCollection([bufferA, bufferB]);
 
     activeIntersectionBuffers = result;
 
+}
+
+
+function showIntersectionBuffers(closestLine) {
     map.getSource('intersectionBuffers').setData(activeIntersectionBuffers);
+}
+
+function getIntersectionsForStreet(closestLine) {
+
+
+    // console.log(`Availbale intersctions are____>>>> ${toString(intersections)}`)
+    let streetName = closestLine.properties.name;
+    let streetIntersections = [];
+    intersections.features.forEach(intersection => {
+        // console.log("Dentro del loop");
+        // console.log(`Estoy comparando ${toString(intersection)} con ${streetName} `);
+        if (intersection.properties.streets.indexOf(streetName) !== -1) {
+            // console.log("Pasa la prueba");
+            streetIntersections.push(intersection);
+        };
+    });
+
+    // console.log(`Para la calle ${streetName}, las intersecciones posibles son: ${toString(streetIntersections)}`);
+    return streetIntersections;
+
+
+
+
 
 }
 

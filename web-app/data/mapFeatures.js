@@ -372,11 +372,12 @@
 
 
 let _mapFeatures = {
+
     "features": [
         {
             "type": "Feature",
             "properties": {
-                "name": "4-1"
+                "name": "1-4"
             },
             "geometry": {
                 "coordinates": [
@@ -460,7 +461,7 @@ let _mapFeatures = {
                 "streets": [
                     "1-2",
                     "2-3",
-                    "2-4"
+                    "2-5"
                 ]
             },
             "geometry": {
@@ -497,7 +498,8 @@ let _mapFeatures = {
             "properties": {
                 "name": "p7",
                 "streets": [
-                    "4-7, 7-8"
+                    "4-7",
+                    "7-8"
                 ]
             },
             "geometry": {
@@ -706,7 +708,7 @@ let _mapFeatures = {
         {
             "type": "Feature",
             "properties": {
-                "name": "3-5"
+                "name": "2-5"
             },
             "geometry": {
                 "coordinates": [
@@ -782,4 +784,5 @@ let _mapFeatures = {
         }
     ],
     "type": "FeatureCollection"
+
 }

@@ -35,15 +35,22 @@ let activeIntersectionBuffers = {
     'features': []
 }
 
-//Map setup
+// //Map Setup
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRhemFyIiwiYSI6ImNqdWFrZnk5ODAzbjU0NHBncHMyZ2JpNXUifQ.Kbdt8hM8CJIIryBWPSXczQ';
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/davidazar/cjuaotgzk0fmo1flgh9nprrbo',
-    center: [-73.993944, 40.729287],
+    style: 'mapbox://styles/davidazar/cjukkxnww88nb1fqtgh1ovfmj',
+    center: [-73.993944, 40.729499],
     zoom: 16.6
 });
 
+// mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRhemFyIiwiYSI6ImNqdWFrZnk5ODAzbjU0NHBncHMyZ2JpNXUifQ.Kbdt8hM8CJIIryBWPSXczQ';
+// const map = new mapboxgl.Map({
+//     container: 'map',
+//     style: 'mapbox://styles/davidazar/cjukkxnww88nb1fqtgh1ovfmj',
+//     center: [2.317600, 48.866500],
+//     zoom: 12.0
+// });
 
 
 map.on('load', () => {
@@ -157,39 +164,47 @@ function getContainingBuffer(snappedLocation) {
         activeBuffer = bufferB;
     } else {
         if (prevActiveBuffer) {
-            console.log("Exited Buffer");
+            let intersection = activeBuffer.properties.name;
+
+            console.log(`Exited  buffer ${intersection}`);
             activeBuffer = undefined;
             prevActiveBuffer = false;
         }
     }
 
     if (!prevActiveBuffer && activeBuffer !== undefined) {
-        console.log(`Entered  buffer ${toString(activeBuffer)}`);
+        let intersection = activeBuffer.properties.name;
+        let walkingFrom = activeBuffer.properties.walkingFrom;
+        console.log(`Entered  buffer ${intersection} walking from ${walkingFrom}`);
+
         prevActiveBuffer = true;
     }
-
-
-
-
 
 }
 
 
-function showIntersectionBuffers(closetLine) {
+function showIntersectionBuffers(closestLine) {
 
-    let pointA = turf.point(turf.getCoords(closetLine)[0]);
-    let pointB = turf.point(turf.getCoords(closetLine)[1]);
+    let pointA = turf.point(turf.getCoords(closestLine)[0]);
+    let pointB = turf.point(turf.getCoords(closestLine)[1]);
 
     // console.log(`Point A   ${toString(pointA)}`);
 
     let bufferA = turf.buffer(pointA, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
     let bufferB = turf.buffer(pointB, RADIUS_FOR_INTERSECTION_BUFFER, { 'units': 'kilometers' });
-    bufferA.properties.name = closetLine.properties.name + "A";
-    bufferB.properties.name = closetLine.properties.name + "B";
+    bufferA.properties.name = closestLine.properties.name; //+A
+    bufferB.properties.name = closestLine.properties.name;//+B
+    bufferA.properties.walkingFrom = closestLine.properties.name;
+    bufferB.properties.walkingFrom = closestLine.properties.name;
+
+    //TODO: el problema es que no hay forma de diferenciar que buffer es. Debemos de nombrar los buffers de manera unica
+    //Con el approach que tenemos ahorita, los buffers se nombran en base a la calle en la que estan y la direccion en la que los agarré
+    //Como vamos a identificar cada buffer cuando expandamos?
+
 
     // console.log(`bufferA    ${toString(bufferA)}`);
 
-    var result = turf.featureCollection([bufferA, bufferB]);
+    let result = turf.featureCollection([bufferA, bufferB]);
 
     activeIntersectionBuffers = result;
 

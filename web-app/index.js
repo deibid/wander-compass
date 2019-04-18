@@ -119,9 +119,12 @@ function onNewLocation() {
     let closestStreet = closestLineToPoint(liveLocationPoint, _mapFeatures);
     let snappedLocation = turf.nearestPointOnLine(closestStreet, liveLocationPoint, { 'units': 'meters' });
 
+    UI.displayStreet(getFeatureName(closestStreet));
 
     //Show the snapped point on the MapBox map
     snappedLocationMarker.setLngLat(turf.getCoords(snappedLocation));
+
+    UI.displayLocation(snappedLocationMarker.getLngLat());
 
 
     let lineCenter = turf.center(closestStreet);
@@ -137,19 +140,14 @@ function onNewLocation() {
     showIntersectionBuffers(closestStreet);
 
     let containingBuffer = findContainingBuffer(snappedLocation);
+    if (containingBuffer !== undefined)
+        UI.displayActiveIntersection(getFeatureName(containingBuffer));
 
     //Enter buffer
     if (!mWasInBuffer && containingBuffer !== undefined) {
         console.log(`Entered Buffer ${toString(containingBuffer)}`);
 
-
-        // let streetsWalkedNames = getWalkedStreetNames();
-        // let possibleStreetsNames = getPossibleStreetsNames(containingBuffer);
-        // let availableStreets = getAvailableStreets(streetsWalkedNames, possibleStreetsNames);
         let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, containingBuffer);
-
-
-
         mWasInBuffer = true;
     }
 
@@ -157,6 +155,7 @@ function onNewLocation() {
     if (mWasInBuffer && containingBuffer === undefined) {
         console.log(`Exited Buffer`);
         mWasInBuffer = false;
+        UI.displayActiveIntersection("-");
     }
 }
 
@@ -177,13 +176,18 @@ function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
     console.log(`Las calles NO caminadas para la interseccion ${containingBuffer.properties.name} son:__>   \n${toString(temp)}`);
 
 
+    let names = "";
+    temp.forEach(street => {
+        names += street.properties.name + " ";
+    });
+
+    UI.displayAvailableStreets(names);
+
 }
 
-function getStreetsForIntersection(containingBuffer) {
+// function getStreetsForIntersection(containingBuffer) {
 
-
-
-}
+// }
 
 function getPossibleStreetsNames(containingBuffer) {
 
@@ -350,6 +354,9 @@ function closestLineToPoint(_point, _mapFeatures) {
 }
 
 
+function getFeatureName(feature) {
+    return feature.properties.name;
+}
 
 
 function getStreetByName(name) {

@@ -1,3 +1,20 @@
+let socket = io();
+
+
+
+socket.on('new-location-from-phone', (msg) => {
+
+    console.log("New Location ->> ");
+    console.log(toString(msg));
+
+
+
+
+});
+
+
+
+
 //Distance in meters between a location point and the center of the street to count it as walked
 const TOLERANCE_RADIUS_FOR_STREET_WALKED = 2.5;
 
@@ -220,9 +237,6 @@ function getAvailableStreets() {
     let availableStreetsForIntersection = mActiveBuffer.properties.streets;
     let streetsNotWalked = availableStreetsForIntersection.filter(streetName => streetsWalkedNames.indexOf(streetName) !== 1);
     console.log(`Las calles disponibles para la interseccion ${mActiveBuffer.properties.name} son: ${streetsNotWalked}`);
-
-
-
 
 }
 

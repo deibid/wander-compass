@@ -10,10 +10,18 @@ const EVENT_NEW_LOCATION = "new-location-from-phone";
 function sendEvent() {
 
 
+  // let data = {
+  //   "lng": -73.995044,
+  //   "lat": 40.729716
+  // };
+
+
   let data = {
-    "lng": -73.995044,
-    "lat": 40.729716
-  }
+    "lng": -73.99493742619224,
+    "lat": 40.729596062586786
+  };
+
+
   socket.emit(EVENT_NEW_LOCATION, data);
 }
 
@@ -466,6 +474,7 @@ socket.on("show-street-center", (msg) => {
 });
 
 socket.on("display-walked-streets", (msg) => {
+  console.log(`Estoy en display walked`);
   mStreetsWalked = msg;
   map.getSource('walkedStreets').setData(mStreetsWalked);
 });
@@ -481,10 +490,17 @@ socket.on("send-location-markers", (msg) => {
   let real = msg.real;
   let snapped = msg.snapped;
 
-
-
   snappedLocationMarker.setLngLat(snapped);
   liveLocationMarker.setLngLat(real);
 
+});
+
+socket.on('display-active-buffer', (msg) => {
+
+  UI.displayActiveIntersection(msg);
 
 });
+
+socket.on('display-available-streets', (msg) => {
+  UI.displayAvailableStreets(msg);
+})

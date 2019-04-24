@@ -102,8 +102,9 @@ module.exports.onNewLocation = function (msg) {
   showIntersectionBuffers(closestStreet);
 
   let containingBuffer = findContainingBuffer(snappedLocation);
-  // if (containingBuffer !== undefined)
-  // UI.displayActiveIntersection(getFeatureName(containingBuffer));
+  if (containingBuffer !== undefined)
+    // UI.displayActiveIntersection(getFeatureName(containingBuffer));
+    io.emit(events.DISPLAY_ACTIVE_BUFFER, getFeatureName(containingBuffer));
 
   //Enter buffer
   if (!mWasInBuffer && containingBuffer !== undefined) {
@@ -143,7 +144,8 @@ function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
     names += street.properties.name + " ";
   });
 
-  UI.displayAvailableStreets(names);
+  // UI.displayAvailableStreets(names);
+  io.emit(events.DISPLAY_AVAILABLE_STREETS, names);
 
 }
 
@@ -265,7 +267,8 @@ function showStreetCenter(point) {
 
 //Update the layer data to show the saved streets
 function showWalkedStreets() {
-  io.emit(events.SHOW_WALKED_STREETS, mStreetsWalked);
+  console.log(`show walked streets ${toString(mStreetsWalked)}`);
+  io.emit(events.DISPLAY_WALKED_STREETS, mStreetsWalked);
   // map.getSource('walkedStreets').setData(mStreetsWalked);
 }
 

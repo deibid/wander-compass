@@ -7,5 +7,6 @@ module.exports = {
   DISPLAY_INTERSECTION_BUFFERS: 'display-intersection-buffers',
   SEND_LOCATION_MARKERS: 'send-location-markers',
   DISPLAY_ACTIVE_BUFFER: 'display-active-buffer',
-  DISPLAY_AVAILABLE_STREETS: 'display-available-streets'
+  DISPLAY_AVAILABLE_STREETS: 'display-available-streets',
+  SEND_DIRECTIONS: "send-directions"
 };

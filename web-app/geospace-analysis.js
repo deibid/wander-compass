@@ -102,9 +102,22 @@ module.exports.onNewLocation = function (msg) {
   showIntersectionBuffers(closestStreet);
 
   let containingBuffer = findContainingBuffer(snappedLocation);
-  if (containingBuffer !== undefined)
+  if (containingBuffer !== undefined) {
     // UI.displayActiveIntersection(getFeatureName(containingBuffer));
     io.emit(events.DISPLAY_ACTIVE_BUFFER, getFeatureName(containingBuffer));
+
+    let directions = {
+      "bufferName": getFeatureName(containingBuffer),
+      "directions": {
+        "right": true,
+        "left": false,
+        "straight": true
+      }
+    };
+
+    io.emit(events.SEND_DIRECTIONS, directions);
+  }
+
 
   //Enter buffer
   if (!mWasInBuffer && containingBuffer !== undefined) {

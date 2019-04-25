@@ -27,5 +27,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
     implementation 'com.google.android.gms:play-services-location:16.0.0'
+    implementation 'com.github.nkzawa:socket.io-client:0.5.2'
+
 
 }

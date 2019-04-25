@@ -16,7 +16,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+
+import com.github.nkzawa.emitter.Emitter;
+import com.github.nkzawa.engineio.client.Transport;
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Manager;
+import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -29,6 +36,14 @@ import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.net.URISyntaxException;
+
+
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -45,12 +60,22 @@ public class MainActivity extends AppCompatActivity {
 
     private int locationUpdates = 0;
 
+    private Socket mSocket;
+    private static final String EVENT_SEND_DIRECTIONS = "send-directions";
 
     private static final int LOCATION_PERMISSION_REQUEST = 0;
+
+
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        initializeSocket();
 
 
         locationTv = findViewById(R.id.location);
@@ -81,15 +106,20 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
+                double lng = 0;
+                double lat = 0;
+
                 for(Location location : locationResult.getLocations()){
                     Log.d("Location Result loop",location.toString());
-                    double lng = location.getLongitude();
-                    double lat = location.getLatitude();
+                    lng = location.getLongitude();
+                    lat = location.getLatitude();
                     locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
                 }
 
                 locationUpdates++;
                 updatesTv.setText(String.valueOf(locationUpdates));
+
+                sendLocationToServer(lng,lat);
             }
 
         };
@@ -178,5 +208,90 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+
+
+    private void initializeSocket(){
+
+        Log.d("socket", "init");
+
+        try{
+
+            IO.Options options = new IO.Options();
+            options.port = 3000;
+//            mSocket = IO.socket("http://192.168.1.3",options);
+            mSocket = IO.socket("http://192.168.1.3:3000");
+            mSocket.connect();
+
+
+            mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    Log.d("socket", "Connected");
+//
+//                    mSocket.emit("foo","HI");
+//                    mSocket.disconnect();
+                    Log.d("Socket","CONNECTED");
+                }
+            }).on(EVENT_SEND_DIRECTIONS, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+
+
+                    JSONObject obj = (JSONObject)args[0];
+                    Log.d("Recibí objeto", obj.toString());
+
+
+                }
+            }).on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    Log.d("Socket", "Disconneted");
+                }
+            });
+
+
+            mSocket.io().on(Manager.EVENT_TRANSPORT, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    Transport transport = (Transport) args[0];
+                    transport.on(Transport.EVENT_ERROR, new Emitter.Listener() {
+                        @Override
+                        public void call(Object... args) {
+                            Exception e = (Exception) args[0];
+                            Log.e("Transport", "Transport error " + e);
+                            e.printStackTrace();
+                            e.getCause().printStackTrace();
+                        }
+                    });
+                }
+            });
+
+
+
+
+
+
+        }catch(URISyntaxException e){
+            Log.d("Error",e.toString());
+        }
+
+    }
+
+    private void sendLocationToServer(double lng,double lat){
+
+
+        try{
+
+            JSONObject obj = new JSONObject();
+            obj.put("lng",lng);
+            obj.put("lat",lat);
+            mSocket.emit("new-location-from-phone", obj);
+
+        }catch(JSONException je){
+            Log.d("error with JSON", je.toString());
+        }
+
     }
 }

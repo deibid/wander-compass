@@ -106,20 +106,19 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                double lng = 0;
-                double lat = 0;
-
                 for(Location location : locationResult.getLocations()){
+                    Log.d("Location Result Loop","Recibi Locations #"+locationResult.getLocations().size());
                     Log.d("Location Result loop",location.toString());
-                    lng = location.getLongitude();
-                    lat = location.getLatitude();
+                    double lng = location.getLongitude();
+                    double lat = location.getLatitude();
                     locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
+                    sendLocationToServer(lng,lat);
                 }
 
                 locationUpdates++;
                 updatesTv.setText(String.valueOf(locationUpdates));
 
-                sendLocationToServer(lng,lat);
+
             }
 
         };
@@ -218,9 +217,7 @@ public class MainActivity extends AppCompatActivity {
 
         try{
 
-            IO.Options options = new IO.Options();
-            options.port = 3000;
-//            mSocket = IO.socket("http://192.168.1.3",options);
+
             mSocket = IO.socket("http://192.168.1.3:3000");
             mSocket.connect();
 
@@ -252,21 +249,21 @@ public class MainActivity extends AppCompatActivity {
             });
 
 
-            mSocket.io().on(Manager.EVENT_TRANSPORT, new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    Transport transport = (Transport) args[0];
-                    transport.on(Transport.EVENT_ERROR, new Emitter.Listener() {
-                        @Override
-                        public void call(Object... args) {
-                            Exception e = (Exception) args[0];
-                            Log.e("Transport", "Transport error " + e);
-                            e.printStackTrace();
-                            e.getCause().printStackTrace();
-                        }
-                    });
-                }
-            });
+//            mSocket.io().on(Manager.EVENT_TRANSPORT, new Emitter.Listener() {
+//                @Override
+//                public void call(Object... args) {
+//                    Transport transport = (Transport) args[0];
+//                    transport.on(Transport.EVENT_ERROR, new Emitter.Listener() {
+//                        @Override
+//                        public void call(Object... args) {
+//                            Exception e = (Exception) args[0];
+//                            Log.e("Transport", "Transport error " + e);
+//                            e.printStackTrace();
+//                            e.getCause().printStackTrace();
+//                        }
+//                    });
+//                }
+//            });
 
 
 

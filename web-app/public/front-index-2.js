@@ -35,11 +35,11 @@ let point1 = turf.point([-73.995044, 40.729716]);
 // let point4 = turf.point([-73.993494, 40.729629]);
 
 // let multiPoints = turf.multiPoint([[-73.995044, 40.729716], [-73.994886, 40.729189], [-73.993946, 40.729001], [-73.993494, 40.729629]]);
-// let mStreetLines = getStreetLines(_mapFeatures);
-// let mIntersections = getIntersections(_mapFeatures);
+let mStreetLines = getStreetLines(_mapFeatures);
+let mIntersections = getIntersections(_mapFeatures);
 
-// let mActiveBuffer;
-// let mWasInBuffer = false;
+let mActiveBuffer;
+let mWasInBuffer = false;
 
 
 let angleP1 = turf.point([-73.983802, 40.729290]);
@@ -142,66 +142,75 @@ let liveLocationMarker = new mapboxgl.Marker({ draggable: 'true' })
 //Marker for snapped location
 let snappedLocationMarker = new mapboxgl.Marker({ "color": "#FA77C3" }).setLngLat([0, 0]).addTo(map);
 //Add event listener for when dragging or receiving location from server
-liveLocationMarker.on('drag')//, onNewLocation);
+// liveLocationMarker.on('drag')//, onNewLocation);
+liveLocationMarker.on('drag', onNewLocation);
 
 
 
-//Function executed when dragging. This will get changed to a live location pushed from the phone
-// function onNewLocation() {
+// Function executed when dragging. This will get changed to a live location pushed from the phone
+function onNewLocation() {
 
-//   //get a MapBox object with coordinates
-//   let liveLocation = liveLocationMarker.getLngLat();
+  console.log("Drag");
 
-//   //Parse and create a Turf.js Point with the new location data
-//   let liveLng = liveLocation.lng;
-//   let liveLat = liveLocation.lat;
-//   let liveLocationPoint = turf.point([liveLng, liveLat]);
+  //get a MapBox object with coordinates
+  let liveLocation = liveLocationMarker.getLngLat();
 
-
-//   //Get the closest line on a MapBox street from the Point
-//   //Find the nearest point inside a street to snap to
-//   let closestStreet = closestLineToPoint(liveLocationPoint, _mapFeatures);
-//   let snappedLocation = turf.nearestPointOnLine(closestStreet, liveLocationPoint, { 'units': 'meters' });
-
-//   UI.displayStreet(getFeatureName(closestStreet));
-
-//   //Show the snapped point on the MapBox map
-//   snappedLocationMarker.setLngLat(turf.getCoords(snappedLocation));
-
-//   UI.displayLocation(snappedLocationMarker.getLngLat());
+  //Parse and create a Turf.js Point with the new location data
+  let liveLng = liveLocation.lng;
+  let liveLat = liveLocation.lat;
+  let liveLocationPoint = turf.point([liveLng, liveLat]);
 
 
-//   let lineCenter = turf.center(closestStreet);
-//   showStreetCenter(lineCenter);
+  console.log(`liveLocationPoint   ${toString(liveLocationPoint)}`);
+  //Get the closest line on a MapBox street from the Point
+  //Find the nearest point inside a street to snap to
+  let closestStreet = closestLineToPoint(liveLocationPoint, _mapFeatures);
+  let snappedLocation = turf.nearestPointOnLine(closestStreet, liveLocationPoint, { 'units': 'meters' });
 
-//   if (Math.abs(distanceBetween(lineCenter, snappedLocation)) < TOLERANCE_RADIUS_FOR_STREET_WALKED) {
-//     walkStreet(closestStreet);
-//   }
+  let snappedLng = turf.getCoord(snappedLocation)[0];
+  let snappedLat = turf.getCoord(snappedLocation)[1];
 
-//   showWalkedStreets();
+  socket.emit("new-location-from-phone", { "lng": snappedLng, "lat": snappedLat });
 
-//   findIntersectionBuffers(closestStreet);
-//   showIntersectionBuffers(closestStreet);
+  // UI.displayStreet(getFeatureName(closestStreet));
 
-//   let containingBuffer = findContainingBuffer(snappedLocation);
-//   if (containingBuffer !== undefined)
-//     UI.displayActiveIntersection(getFeatureName(containingBuffer));
+  // //Show the snapped point on the MapBox map
+  // snappedLocationMarker.setLngLat(turf.getCoords(snappedLocation));
 
-//   //Enter buffer
-//   if (!mWasInBuffer && containingBuffer !== undefined) {
-//     console.log(`Entered Buffer ${toString(containingBuffer)}`);
+  // UI.displayLocation(snappedLocationMarker.getLngLat());
 
-//     let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, containingBuffer);
-//     mWasInBuffer = true;
-//   }
 
-//   //Exit buffer
-//   if (mWasInBuffer && containingBuffer === undefined) {
-//     console.log(`Exited Buffer`);
-//     mWasInBuffer = false;
-//     UI.displayActiveIntersection("-");
-//   }
-// }
+  // let lineCenter = turf.center(closestStreet);
+  // showStreetCenter(lineCenter);
+
+  // if (Math.abs(distanceBetween(lineCenter, snappedLocation)) < TOLERANCE_RADIUS_FOR_STREET_WALKED) {
+  //   walkStreet(closestStreet);
+  // }
+
+  // showWalkedStreets();
+
+  // findIntersectionBuffers(closestStreet);
+  // showIntersectionBuffers(closestStreet);
+
+  // let containingBuffer = findContainingBuffer(snappedLocation);
+  // if (containingBuffer !== undefined)
+  //   UI.displayActiveIntersection(getFeatureName(containingBuffer));
+
+  // //Enter buffer
+  // if (!mWasInBuffer && containingBuffer !== undefined) {
+  //   console.log(`Entered Buffer ${toString(containingBuffer)}`);
+
+  //   let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, containingBuffer);
+  //   mWasInBuffer = true;
+  // }
+
+  // //Exit buffer
+  // if (mWasInBuffer && containingBuffer === undefined) {
+  //   console.log(`Exited Buffer`);
+  //   mWasInBuffer = false;
+  //   UI.displayActiveIntersection("-");
+  // }
+}
 
 // function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
 
@@ -378,22 +387,22 @@ liveLocationMarker.on('drag')//, onNewLocation);
 // // });
 
 
-// function closestLineToPoint(_point, _mapFeatures) {
+function closestLineToPoint(_point, _mapFeatures) {
 
-//   let closestLine;
-//   let shortestDistance = 1000;
+  let closestLine;
+  let shortestDistance = 1000;
 
 
-//   turf.featureEach(mStreetLines, (currentLine, lineIndex) => {
-//     let currentDistance = turf.pointToLineDistance(_point, currentLine, { 'units': 'meters' });
-//     if (currentDistance < shortestDistance) {
-//       closestLine = currentLine;
-//       shortestDistance = currentDistance;
-//     }
-//   });
+  turf.featureEach(mStreetLines, (currentLine, lineIndex) => {
+    let currentDistance = turf.pointToLineDistance(_point, currentLine, { 'units': 'meters' });
+    if (currentDistance < shortestDistance) {
+      closestLine = currentLine;
+      shortestDistance = currentDistance;
+    }
+  });
 
-//   return closestLine;
-// }
+  return closestLine;
+}
 
 
 // function getFeatureName(feature) {
@@ -419,39 +428,39 @@ liveLocationMarker.on('drag')//, onNewLocation);
 // }
 
 
-// function getStreetLines(_mapFeatures) {
+function getStreetLines(_mapFeatures) {
 
-//   let streetLines = {
-//     'features': [],
-//     'type': "FeatureCollection"
-//   }
+  let streetLines = {
+    'features': [],
+    'type': "FeatureCollection"
+  }
 
-//   turf.featureEach(_mapFeatures, (currentFeature, featureIndex) => {
+  turf.featureEach(_mapFeatures, (currentFeature, featureIndex) => {
 
-//     if (turf.getType(currentFeature) === 'LineString') {
-//       streetLines.features.push(currentFeature);
-//     }
-//   });
+    if (turf.getType(currentFeature) === 'LineString') {
+      streetLines.features.push(currentFeature);
+    }
+  });
 
-//   return streetLines;
-// }
+  return streetLines;
+}
 
-// function getIntersections(_mapFeatures) {
+function getIntersections(_mapFeatures) {
 
-//   let intersections = {
-//     'features': [],
-//     'type': "FeatureCollection"
-//   }
+  let intersections = {
+    'features': [],
+    'type': "FeatureCollection"
+  }
 
-//   turf.featureEach(_mapFeatures, (currentFeature, featureIndex) => {
+  turf.featureEach(_mapFeatures, (currentFeature, featureIndex) => {
 
-//     if (turf.getType(currentFeature) === 'Point') {
-//       intersections.features.push(currentFeature);
-//     }
-//   });
+    if (turf.getType(currentFeature) === 'Point') {
+      intersections.features.push(currentFeature);
+    }
+  });
 
-//   return intersections;
-// }
+  return intersections;
+}
 
 
 

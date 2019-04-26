@@ -147,12 +147,10 @@ module.exports.onNewLocation = function (msg) {
 function enteredIntersectionBuffer(buffer, fromStreet) {
 
   console.log(`Entered Buffer ${toString(buffer)}`);
-  console.log(`From street_.     ${toString(street)}`);
+  console.log(`From street_.     ${toString(fromStreet)}`);
 
   let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, buffer);
-
   let directions = calculateDirections(availableStreets, fromStreet);
-
 
 
   mWasInBuffer = true;
@@ -165,11 +163,111 @@ function calculateDirections(availableStreets, fromStreet) {
   //armar objecto
   //mandar hacia telefono
 
+  let streetCenters = getCentersForStreetAtIntersections(availableStreets, fromStreet);
+  console.log(`Los centros son: \m ${toString(streetCenters)}`);
+
+  let fromStreetCenter = turf.getCoord(turf.center(fromStreet));
+
+  // let temp = streetCenters[1];
+  // streetCenters[1] = streetCenters[2];
+  // streetCenters[2] = temp;
+
+
+
+
+  let sorted = streetCenters.sort((a, b) => {
+    return a.properties.angle - b.properties.angle;
+  });
+
+  console.log(`SORTED:_>   ${toString(sorted)}`);
+
+  // sorted.forEach(street => {
+  //   console.log(`STREET TO ASSIGN    ${toString(street)}`);
+  //   let walked = mStreetsWalked.features.includes(street);
+  //   street.walked = walked;
+  // });
+
+
+  console.log(`Street with angle and status  ${toString(sorted)}`);
+  let directions = {};
+
+
+  // streetCenters.forEach(center => {
+
+
+
+
+  // });
+
+
+
+
+
+
 
 }
 
 
+function getCentersForStreetAtIntersections(availableStreets, fromStreet) {
 
+  let streetCenters = [];
+
+  availableStreets.forEach(street => {
+
+    if (getFeatureName(fromStreet) !== getFeatureName(street)) {
+      let name = getFeatureName(street);
+      let center = turf.center(street);
+      center.properties.name = name;
+
+      let walked = mStreetsWalked.features.includes(street);
+      center.properties.walked = walked;
+
+      let angle = turf.bearing(turf.center(fromStreet), turf.center(street));
+      center.properties.angle = angle;
+
+      center.properties.direction = getOrientationForAngle(angle);
+
+
+      streetCenters.push(center);
+      // let obj = {
+      //   // "name": name,
+      //   "center": turf;
+      // };
+      // streetCenters.centers.push(obj);
+    }
+  });
+  return streetCenters;
+}
+
+
+
+
+function getOrientationForAngle(angle) {
+
+
+  if (angle > 0) {
+
+
+  }
+
+
+  if (angle < 0) {
+
+    if (angle < 0 && angle >= -30) {
+      return "right";
+    } else if (angle < -30 && angle >= -80) {
+      return "straight";
+    } else if (angle < -80) {
+      return "left";
+    }
+
+  }
+
+
+
+
+
+}
 
 function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
 
@@ -197,7 +295,7 @@ function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
   io.emit(events.DISPLAY_AVAILABLE_STREETS, names);
 
 
-  return temp;
+  return availableStreets;
 
 }
 
@@ -294,9 +392,9 @@ function showIntersectionBuffers() {
 function getIntersectionsForStreet(street) {
 
 
-  console.log(`getIntersectionForStreet`);
-  console.log(`Street Name ${toString(street)}`);
-  console.log(`mIntersections ${toString(mIntersections)}`);
+  // console.log(`getIntersectionForStreet`);
+  // console.log(`Street Name ${toString(street)}`);
+  // console.log(`mIntersections ${toString(mIntersections)}`);
   let streetName = street.properties.name;
   let streetIntersections = [];
   mIntersections.features.forEach(intersection => {
@@ -319,7 +417,7 @@ function showStreetCenter(point) {
 
 //Update the layer data to show the saved streets
 function showWalkedStreets() {
-  console.log(`show walked streets ${toString(mStreetsWalked)}`);
+  // console.log(`show walked streets ${toString(mStreetsWalked)}`);
   io.emit(events.DISPLAY_WALKED_STREETS, mStreetsWalked);
   // map.getSource('walkedStreets').setData(mStreetsWalked);
 }
@@ -362,10 +460,10 @@ function closestLineToPoint(_point, _mapFeatures) {
   let closestLine;
   let shortestDistance = 1000;
 
-  console.log("antes de revisar");
-  console.log(`mStreetLines:> ${toString(mStreetLines)}`);
+  // console.log("antes de revisar");
+  // console.log(`mStreetLines:> ${toString(mStreetLines)}`);
   turf.featureEach(mStreetLines, (currentLine, lineIndex) => {
-    console.log("Estoy revisando");
+    // console.log("Estoy revisando");
     let currentDistance = turf.pointToLineDistance(_point, currentLine, { 'units': 'meters' });
     if (currentDistance < shortestDistance) {
       closestLine = currentLine;

@@ -3,11 +3,20 @@ package mx.davidazar.wandercompass;
 import android.Manifest;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -41,11 +50,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.List;
 
 
-
-
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
 
 
@@ -54,9 +62,23 @@ public class MainActivity extends AppCompatActivity {
     private LocationRequest locationRequest;
     private LocationCallback locationCallback;
 
+
+
+    private BluetoothAdapter mBluetoothAdapter;
+    private boolean mScanning;
+    private Handler mHandler;
+
+
+    private static final long SCAN_PERIOD = 10000;
+
+
+
+
     private TextView locationTv;
     private TextView updatesTv;
-    private Button startBt;
+    private Button scanBt;
+    private TextView statusTv;
+    private TextView resultTv;
 
     private int locationUpdates = 0;
 
@@ -64,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String EVENT_SEND_DIRECTIONS = "send-directions";
 
     private static final int LOCATION_PERMISSION_REQUEST = 0;
+    private static final int REQUEST_ENABLE_INTENT = 1;
 
 
 
@@ -76,12 +99,22 @@ public class MainActivity extends AppCompatActivity {
 
 
         initializeSocket();
+        initializeBluetooth();
+
+        mHandler = new Handler();
 
 
         locationTv = findViewById(R.id.location);
         updatesTv = findViewById(R.id.locationUpdates);
 
-        startBt = findViewById(R.id.startBt);
+        scanBt = findViewById(R.id.scanBt);
+        scanBt.setOnClickListener(this);
+
+
+        statusTv = findViewById(R.id.scanStatus);
+        resultTv = findViewById(R.id.scanResult);
+
+
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -291,4 +324,119 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+
+
+    private void initializeBluetooth(){
+
+
+        final BluetoothManager manager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = manager.getAdapter();
+
+
+        if(mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()){
+
+            Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBTIntent,REQUEST_ENABLE_INTENT);
+
+
+        }
+
+
+
+
+
+    }
+
+
+
+    private void startLEScan(final boolean enable){
+
+
+        final BluetoothLeScanner scanner = mBluetoothAdapter.getBluetoothLeScanner();
+
+
+        Log.d("Bluetooth","Scanning...");
+        statusTv.setText(R.string.scanning);
+
+        if(enable){
+
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mScanning = false;
+                    scanner.stopScan(mLeScanCallback);
+                    scanBt.setEnabled(true);
+
+                }
+            },SCAN_PERIOD);
+
+            scanner.startScan(mLeScanCallback);
+            mScanning = true;
+            scanBt.setEnabled(false);
+
+        }else{
+            scanner.stopScan(mLeScanCallback);
+            mScanning = false;
+            scanBt.setEnabled(true);
+        }
+
+    }
+
+
+
+    private ScanCallback mLeScanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            super.onScanResult(callbackType, result);
+            statusTv.setText("Scan Successful");
+        }
+
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
+            statusTv.setText("Results go here");
+            Log.d("Bluetooth Scan",results.toString());
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            super.onScanFailed(errorCode);
+            statusTv.setText("Scan Error");
+        }
+
+    };
+
+
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode){
+            case REQUEST_ENABLE_INTENT:
+                Toast.makeText(this,"Bluetooth enabled",Toast.LENGTH_LONG);
+                break;
+        }
+
+    }
+
+
+    @Override
+    public void onClick(View v) {
+
+        switch (v.getId()){
+
+            case R.id.scanBt:
+                startLEScan(true);
+                break;
+
+        }
+
+
+    }
+
+
+
 }

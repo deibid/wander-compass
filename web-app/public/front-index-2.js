@@ -41,6 +41,25 @@ let point1 = turf.point([-73.995044, 40.729716]);
 // let mActiveBuffer;
 // let mWasInBuffer = false;
 
+
+let angleP1 = turf.point([-73.983802, 40.729290]);
+let angleP2 = turf.point([-73.983885, 40.729520]);
+let angleP3 = turf.point([-73.984236, 40.729485]);
+let angleP4 = turf.point([-73.984156, 40.729175]);
+
+
+
+
+let angle = turf.rhumbBearing(angleP1, angleP2);
+let angle2 = turf.rhumbBearing(angleP1, angleP3);
+let angle3 = turf.rhumbBearing(angleP1, angleP4);
+
+console.log(`Angle 1-> ${angle}`);
+console.log(`Angle 2-> ${angle2}`);
+console.log(`Angle 3-> ${angle3}`);
+
+
+
 let mStreetsWalked = {
   'type': 'FeatureCollection',
   'features': []

@@ -2,5 +2,9 @@
 
     <string name="app_name">Wander Compass</string>
     <string name="start_walk">Start Tracking</string>
+    <string name="start_scan">Scan</string>
+    <string name="scanning">Scanning....</string>
+    <string name="scan_failed">Error scanning</string>
+    <string name="scan_finish">Scan successful</string>
 
 </resources>

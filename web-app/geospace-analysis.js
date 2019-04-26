@@ -13,6 +13,9 @@ const TOLERANCE_RADIUS_FOR_STREET_WALKED = 2.5;
 //Size of the hotspots at every intersection in meters
 const RADIUS_FOR_INTERSECTION_BUFFER = 20 / 1000;
 
+//Distance to walk from the intersection into a street. Used for directions. (In kilometers)
+const DISTANCE_FROM_INTERSECTION_FOR_BEARING = 5 / 1000;
+
 let point1 = turf.point([-73.995044, 40.729716]);
 
 let mStreetLines = getStreetLines(_mapFeatures);
@@ -116,15 +119,20 @@ module.exports.onNewLocation = function (msg) {
     };
 
     io.emit(events.SEND_DIRECTIONS, directions);
+    enteredIntersectionBuffer(containingBuffer, closestStreet);
   }
 
 
+  //A lo mejor hay errores de logica en eventos de entrar o salir del buffer. Eso se arregla con los ifs de esta seccion
+
   //Enter buffer
   if (!mWasInBuffer && containingBuffer !== undefined) {
-    console.log(`Entered Buffer ${toString(containingBuffer)}`);
 
-    let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, containingBuffer);
-    mWasInBuffer = true;
+    enteredIntersectionBuffer(containingBuffer, closestStreet);
+
+
+
+
   }
 
   //Exit buffer
@@ -134,6 +142,34 @@ module.exports.onNewLocation = function (msg) {
     // UI.displayActiveIntersection("-");
   }
 }
+
+
+function enteredIntersectionBuffer(buffer, fromStreet) {
+
+  console.log(`Entered Buffer ${toString(buffer)}`);
+  console.log(`From street_.     ${toString(street)}`);
+
+  let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, buffer);
+
+  let directions = calculateDirections(availableStreets, fromStreet);
+
+
+
+  mWasInBuffer = true;
+}
+
+function calculateDirections(availableStreets, fromStreet) {
+
+  //calulcar centros.
+  //Hacer analisis de angulo con bearing
+  //armar objecto
+  //mandar hacia telefono
+
+
+}
+
+
+
 
 function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
 
@@ -159,6 +195,9 @@ function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
 
   // UI.displayAvailableStreets(names);
   io.emit(events.DISPLAY_AVAILABLE_STREETS, names);
+
+
+  return temp;
 
 }
 

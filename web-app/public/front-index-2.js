@@ -170,7 +170,7 @@ function onNewLocation() {
   let snappedLng = turf.getCoord(snappedLocation)[0];
   let snappedLat = turf.getCoord(snappedLocation)[1];
 
-  socket.emit("new-location-from-phone", { "lng": snappedLng, "lat": snappedLat });
+  // socket.emit("new-location-from-phone", { "lng": snappedLng, "lat": snappedLat });
 
   // UI.displayStreet(getFeatureName(closestStreet));
 

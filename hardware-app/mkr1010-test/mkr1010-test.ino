@@ -115,13 +115,8 @@ void loop() {
     Serial.println(directions);
     
     directionCharacteristic.writeValue(DIRECTIONS_REST);
+  
   }
-
-
-
-
-
-
 
 
 

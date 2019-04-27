@@ -109,16 +109,16 @@ module.exports.onNewLocation = function (msg) {
     // UI.displayActiveIntersection(getFeatureName(containingBuffer));
     io.emit(events.DISPLAY_ACTIVE_BUFFER, getFeatureName(containingBuffer));
 
-    let directions = {
-      "bufferName": getFeatureName(containingBuffer),
-      "directions": {
-        "right": true,
-        "left": false,
-        "straight": true
-      }
-    };
+    // let directions = {
+    //   "bufferName": getFeatureName(containingBuffer),
+    //   "directions": {
+    //     "right": true,
+    //     "left": false,
+    //     "straight": true
+    //   }
+    // };
 
-    io.emit(events.SEND_DIRECTIONS, directions);
+    // io.emit(events.SEND_DIRECTIONS, directions);
     enteredIntersectionBuffer(containingBuffer, closestStreet);
   }
 
@@ -153,18 +153,76 @@ function enteredIntersectionBuffer(buffer, fromStreet) {
   // let directions = calculateDirectionsViaCenters(availableStreets, fromStreet);
 
   let directions = calculateDirectionsViaHardData(availableStreets, fromStreet);
+  let command = convertDirectionsToCommand(directions);
+
+  console.log(`Estoy a punto de mandar al android ${toString(command)}`);
+  io.emit(events.SEND_DIRECTIONS, command);
 
 
   mWasInBuffer = true;
 }
 
+function convertDirectionsToCommand(directions) {
+
+
+  let commandString = "";
+
+  directions.forEach(d => {
+
+    if (!d.walked) {
+      let orientationKey = getOrientationKey(d.orientation);
+      console.log(`Orientation KEY rest- >>> ${orientationKey}`);
+      commandString = commandString.concat(orientationKey);
+      console.log(`COmmand string ->        ${commandString}`);
+    }
+  });
+
+
+  if (commandString === "") return -1;
+
+
+  let finalCommand = getRandomTurnForDirection(commandString);
+
+  let instruction = {
+    "to": finalCommand
+  }
+  console.log(`Random command ->>>>   \n${instruction}`);
+  return instruction;
+
+
+}
+
+function getRandomTurnForDirection(commandString) {
+
+
+  let options = commandString.length;
+  let randomIndex = Math.floor(Math.random() * options);
+
+  return commandString.charAt(randomIndex);
+
+
+}
+
+function getOrientationKey(orientation) {
+
+  console.log(`Get orientation Key -> ${orientation}`);
+
+  switch (orientation) {
+    case "left":
+      return "0";
+    case "straight":
+      return "1";
+    case "right":
+      return "2";
+    case "back":
+      return "3"
+
+  }
+
+
+}
+
 function calculateDirectionsViaHardData(availableStreets, fromStreet) {
-
-
-  //extraer direccion de la calle disponible.
-  //armar objeto
-  //regresarlo
-
 
   let fromStreetName = getFeatureName(fromStreet);
 
@@ -195,7 +253,7 @@ function calculateDirectionsViaHardData(availableStreets, fromStreet) {
 
   console.log(`Las instrucciones finales son::: \n\n${toString(directions)}`);
 
-
+  return directions;
 
 
 }

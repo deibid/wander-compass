@@ -56,6 +56,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static android.bluetooth.BluetoothAdapter.STATE_CONNECTED;
+import static android.bluetooth.BluetoothAdapter.STATE_CONNECTING;
+import static android.bluetooth.BluetoothAdapter.STATE_DISCONNECTED;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
@@ -70,8 +72,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private BluetoothAdapter mBluetoothAdapter;
-    private boolean mScanning;
     private BluetoothGatt mGatt;
+    private boolean mDeviceConnected = false;
     private Handler mHandler;
 
     private Context mContext;
@@ -86,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView updatesTv;
     private Button scanBt;
     private TextView statusTv;
-    private TextView resultTv;
     private Button writeCharacteristicLeft;
     private Button writeCharacteristicStraight;
     private Button writeCharacteristicRight;
@@ -129,7 +130,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         statusTv = findViewById(R.id.scanStatusTv);
-        resultTv = findViewById(R.id.scanResult);
+
 
         writeCharacteristicLeft = findViewById(R.id.writeCharacteristicLeft);
         writeCharacteristicLeft.setOnClickListener(this);
@@ -153,62 +154,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 
-//        createLocationRequest();
-//        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        createLocationRequest();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-//        locationCallback = new LocationCallback(){
-//
-//            @Override
-//            public void onLocationResult(LocationResult locationResult) {
-//                if(locationResult == null){
-//                    Log.d("Location Result","No location");
-//                    return;
-//                }
-//
-//                for(Location location : locationResult.getLocations()){
-//                    Log.d("Location Result Loop","Recibi Locations #"+locationResult.getLocations().size());
-//                    Log.d("Location Result loop",location.toString());
-//                    double lng = location.getLongitude();
-//                    double lat = location.getLatitude();
-//                    locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
-//                    sendLocationToServer(lng,lat);
-//                }
-//
-//                locationUpdates++;
-//                updatesTv.setText(String.valueOf(locationUpdates));
-//
-//
-//            }
-//
-//        };
+        locationCallback = new LocationCallback(){
+
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if(locationResult == null){
+                    Log.d("Location Result","No location");
+                    return;
+                }
+
+                for(Location location : locationResult.getLocations()){
+                    Log.d("Location Result Loop","Recibi Locations #"+locationResult.getLocations().size());
+                    Log.d("Location Result loop",location.toString());
+                    double lng = location.getLongitude();
+                    double lat = location.getLatitude();
+                    locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
+                    sendLocationToServer(lng,lat);
+                }
+
+                locationUpdates++;
+                updatesTv.setText(String.valueOf(locationUpdates));
 
 
+            }
 
+        };
 
-
-//        //Pending intent for background tracking
-//        startBt.setOnClickListener(new View.OnClickListener(){
-//            @Override
-//            public void onClick(View v) {
-//
-//                Intent notificationIntent = new Intent(this, ExampleActivity.class);
-//                PendingIntent pendingIntent =
-//                        PendingIntent.getActivity(this, 0, notificationIntent, 0);
-//
-//                Notification notification =
-//                        new Notification.Builder(this, CHANNEL_DEFAULT_IMPORTANCE)
-//                                .setContentTitle(getText(R.string.notification_title))
-//                                .setContentText(getText(R.string.notification_message))
-//                                .setSmallIcon(R.drawable.icon)
-//                                .setContentIntent(pendingIntent)
-//                                .setTicker(getText(R.string.ticker_text))
-//                                .build();
-//
-//                getApplicationContext().startForeground(ONGOING_NOTIFICATION_ID, notification);
-//
-//
-//            }
-//        });
 
     }
 
@@ -221,38 +195,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 
-    private LocationCallback mLocationCallback = new LocationCallback(){
-
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            if(locationResult == null){
-                Log.d("Location Result","No location");
-                return;
-            }
-
-            for(Location location : locationResult.getLocations()){
-                Log.d("Location Result Loop","Recibi Locations #"+locationResult.getLocations().size());
-                Log.d("Location Result loop",location.toString());
-                double lng = location.getLongitude();
-                double lat = location.getLatitude();
-                locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
-                sendLocationToServer(lng,lat);
-            }
-
-            locationUpdates++;
-            updatesTv.setText(String.valueOf(locationUpdates));
-
-
-        }
-
-    };
-
-
-
     private void startLocationUpdates(){
 
 
-//        fusedLocationClient.requestLocationUpdates(locationRequest,mLocationCallback,null);
+        fusedLocationClient.requestLocationUpdates(locationRequest,locationCallback,null);
 
     }
 
@@ -312,10 +258,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    Log.d("socket", "Connected");
-//
-//                    mSocket.emit("foo","HI");
-//                    mSocket.disconnect();
                     Log.d("Socket","CONNECTED");
                 }
             }).on(EVENT_SEND_DIRECTIONS, new Emitter.Listener() {
@@ -325,6 +267,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     JSONObject obj = (JSONObject)args[0];
                     Log.d("Recibí objeto", obj.toString());
+
+                    try{
+                        String commandStr = obj.getString("to");
+                        int command = Integer.parseInt(commandStr);
+
+                        writeLECharacteristic(command);
+                    }catch(JSONException jsone){
+                        Log.w("Error",jsone.getMessage());
+                    }
 
 
                 }
@@ -371,6 +322,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             JSONObject obj = new JSONObject();
             obj.put("lng",lng);
             obj.put("lat",lat);
+
+            Log.d("Socket","Sending location to server->  \n"+obj.toString());
             mSocket.emit("new-location-from-phone", obj);
 
         }catch(JSONException je){
@@ -424,7 +377,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                mScanning = false;
                 scanner.stopScan(mLeScanCallback);
                 scanBt.setEnabled(true);
 
@@ -433,7 +385,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         scanner.startScan(leScanFilter,builderScanSettings.build(),mLeScanCallback);
 
-        mScanning = true;
         scanBt.setEnabled(false);
 
 
@@ -449,6 +400,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             statusTv.setText("Scan Successful");
             Log.d("Wander Compass","Lo tengo");
             mGatt = result.getDevice().connectGatt(mContext,true, mGattCallback);
+
         }
 
         @Override
@@ -473,8 +425,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             super.onConnectionStateChange(gatt, status, newState);
             if(newState == STATE_CONNECTED){
+                mDeviceConnected = true;
                 mGatt.discoverServices();
                 statusTv.setText("Connected!");
+
+            }
+
+            if(newState == STATE_CONNECTING){
+                statusTv.setText("Connecting...");
+            }
+
+            if(newState == STATE_DISCONNECTED){
+                mDeviceConnected = false;
             }
         }
 
@@ -496,6 +458,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     private void writeLECharacteristic(int number){
+
+        Log.d("Write","WRITE CHARR");
+
+        Log.d("Write",""+mDeviceConnected);
+
+
+        if(!mDeviceConnected)return;
+
+        Log.d("WanderCompass Final","Escribiendo "+number);
 
 
         BluetoothGattCharacteristic characteristic =

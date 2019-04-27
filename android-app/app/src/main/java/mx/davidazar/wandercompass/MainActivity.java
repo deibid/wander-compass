@@ -1,10 +1,10 @@
 package mx.davidazar.wandercompass;
 
 import android.Manifest;
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -29,9 +29,7 @@ import android.widget.Toast;
 
 
 import com.github.nkzawa.emitter.Emitter;
-import com.github.nkzawa.engineio.client.Transport;
 import com.github.nkzawa.socketio.client.IO;
-import com.github.nkzawa.socketio.client.Manager;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -51,6 +49,9 @@ import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.UUID;
+
+import static android.bluetooth.BluetoothAdapter.STATE_CONNECTED;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
@@ -66,7 +67,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
+    private BluetoothGatt mGatt;
     private Handler mHandler;
+
+    private Context mContext;
 
 
     private static final long SCAN_PERIOD = 10000;
@@ -79,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button scanBt;
     private TextView statusTv;
     private TextView resultTv;
-
+    private Button writeCharacteristicBt;
     private int locationUpdates = 0;
 
     private Socket mSocket;
@@ -87,6 +91,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final int LOCATION_PERMISSION_REQUEST = 0;
     private static final int REQUEST_ENABLE_INTENT = 1;
+
+
+    private static final UUID WANDER_COMPASS_UUID = UUID.fromString("19b10010-e8f2-537e-4f6c-d104768a1214");
+    private static final UUID WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID = UUID.fromString("19b10013-e8f2-537e-4f6c-d104768a1214");
+    private static final String WANDER_COMPASS_NAME = "Wander Compass";
 
 
 
@@ -101,8 +110,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initializeSocket();
         initializeBluetooth();
 
+
+        mContext = this;
+
         mHandler = new Handler();
 
+//        startLEScan(true);
 
         locationTv = findViewById(R.id.location);
         updatesTv = findViewById(R.id.locationUpdates);
@@ -111,8 +124,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         scanBt.setOnClickListener(this);
 
 
-        statusTv = findViewById(R.id.scanStatus);
+        statusTv = findViewById(R.id.scanStatusTv);
         resultTv = findViewById(R.id.scanResult);
+
+        writeCharacteristicBt = findViewById(R.id.writeCharacteristic);
+        writeCharacteristicBt.setOnClickListener(this);
 
 
 
@@ -127,34 +143,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
 
-        createLocationRequest();
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+//        createLocationRequest();
+//        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-        locationCallback = new LocationCallback(){
-
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if(locationResult == null){
-                    Log.d("Location Result","No location");
-                    return;
-                }
-
-                for(Location location : locationResult.getLocations()){
-                    Log.d("Location Result Loop","Recibi Locations #"+locationResult.getLocations().size());
-                    Log.d("Location Result loop",location.toString());
-                    double lng = location.getLongitude();
-                    double lat = location.getLatitude();
-                    locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
-                    sendLocationToServer(lng,lat);
-                }
-
-                locationUpdates++;
-                updatesTv.setText(String.valueOf(locationUpdates));
-
-
-            }
-
-        };
+//        locationCallback = new LocationCallback(){
+//
+//            @Override
+//            public void onLocationResult(LocationResult locationResult) {
+//                if(locationResult == null){
+//                    Log.d("Location Result","No location");
+//                    return;
+//                }
+//
+//                for(Location location : locationResult.getLocations()){
+//                    Log.d("Location Result Loop","Recibi Locations #"+locationResult.getLocations().size());
+//                    Log.d("Location Result loop",location.toString());
+//                    double lng = location.getLongitude();
+//                    double lat = location.getLatitude();
+//                    locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
+//                    sendLocationToServer(lng,lat);
+//                }
+//
+//                locationUpdates++;
+//                updatesTv.setText(String.valueOf(locationUpdates));
+//
+//
+//            }
+//
+//        };
 
 
 
@@ -195,10 +211,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 
+    private LocationCallback mLocationCallback = new LocationCallback(){
+
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            if(locationResult == null){
+                Log.d("Location Result","No location");
+                return;
+            }
+
+            for(Location location : locationResult.getLocations()){
+                Log.d("Location Result Loop","Recibi Locations #"+locationResult.getLocations().size());
+                Log.d("Location Result loop",location.toString());
+                double lng = location.getLongitude();
+                double lat = location.getLatitude();
+                locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
+                sendLocationToServer(lng,lat);
+            }
+
+            locationUpdates++;
+            updatesTv.setText(String.valueOf(locationUpdates));
+
+
+        }
+
+    };
+
+
+
     private void startLocationUpdates(){
 
 
-        fusedLocationClient.requestLocationUpdates(locationRequest,locationCallback,null);
+//        fusedLocationClient.requestLocationUpdates(locationRequest,mLocationCallback,null);
 
     }
 
@@ -335,11 +379,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         if(mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()){
-
             Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBTIntent,REQUEST_ENABLE_INTENT);
-
-
         }
 
 
@@ -357,7 +398,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         Log.d("Bluetooth","Scanning...");
-        statusTv.setText(R.string.scanning);
+//        statusTv.setText(R.string.scanning);
 
         if(enable){
 
@@ -366,19 +407,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void run() {
                     mScanning = false;
                     scanner.stopScan(mLeScanCallback);
-                    scanBt.setEnabled(true);
+//                    scanBt.setEnabled(true);
 
                 }
             },SCAN_PERIOD);
 
             scanner.startScan(mLeScanCallback);
             mScanning = true;
-            scanBt.setEnabled(false);
+//            scanBt.setEnabled(false);
 
         }else{
             scanner.stopScan(mLeScanCallback);
             mScanning = false;
-            scanBt.setEnabled(true);
+//            scanBt.setEnabled(true);
         }
 
     }
@@ -390,6 +431,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             statusTv.setText("Scan Successful");
+            Log.d("Bluetooth Scan",result.toString());
+
+            String deviceName = result.getDevice().getName();
+            if(deviceName== null) return;
+
+            if(result.getDevice().getName().equals(WANDER_COMPASS_NAME)){
+                Log.d("Wander COmpass","Lo tengo");
+                mGatt = result.getDevice().connectGatt(mContext,true, mGattCallback);
+            }
         }
 
         @Override
@@ -408,6 +458,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     };
 
 
+    private BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            super.onConnectionStateChange(gatt, status, newState);
+
+
+            if(newState == STATE_CONNECTED){
+
+                mGatt.discoverServices();
+
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            super.onServicesDiscovered(gatt, status);
+
+            BluetoothGattCharacteristic characteristic =
+                    gatt.getService(WANDER_COMPASS_UUID).getCharacteristic(WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID);
+
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            super.onCharacteristicWrite(gatt, characteristic, status);
+            Log.d("Wander Compass", "onCharWrite full circle");
+        }
+    };
+
+
+    private void writeLECharacteristic(){
+
+
+        BluetoothGattCharacteristic characteristic =
+                mGatt.getService(WANDER_COMPASS_UUID).getCharacteristic(WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID);
+
+
+        characteristic.setValue("hola");
+        mGatt.writeCharacteristic(characteristic);
+
+    }
 
 
     @Override
@@ -430,6 +521,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.scanBt:
                 startLEScan(true);
+                break;
+
+            case R.id.writeCharacteristic:
+                writeLECharacteristic();
                 break;
 
         }

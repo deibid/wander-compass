@@ -111,7 +111,7 @@ void loop() {
 
 
   if (directions != DIRECTIONS_REST) {
-    if (directions != mPreviousDirection) {
+    if (directions != mPreviousDirection) { 
       Serial.println("Tengo direcciones del Wander Compass");
       Serial.println("Tu siguiente destino es:");
       Serial.println(directions);

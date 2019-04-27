@@ -495,7 +495,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mGatt.getService(WANDER_COMPASS_UUID).getCharacteristic(WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID);
 
 
-        characteristic.setValue("hola");
+//        characteristic.setValue();
+//        characteristic.setValue(new byte[]={-1});
+        characteristic.setValue(10,BluetoothGattCharacteristic.FORMAT_UINT8,0);
         mGatt.writeCharacteristic(characteristic);
 
     }

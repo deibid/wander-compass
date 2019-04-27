@@ -108,16 +108,17 @@ void loop() {
   int directions = directionCharacteristic.value();
 
 
-
-
-  if (directions != DIRECTIONS_REST) {
-    if (directions != mPreviousDirection) { 
-      Serial.println("Tengo direcciones del Wander Compass");
-      Serial.println("Tu siguiente destino es:");
-      Serial.println(directions);
-      mPreviousDirection = directions;
-    }
+  if (directions != DIRECTIONS_REST && directions != 255) {
+    
+    Serial.println("Tengo direcciones del Wander Compass");
+    Serial.println("Tu siguiente direccion es:");
+    Serial.println(directions);
+    
+    directionCharacteristic.writeValue(DIRECTIONS_REST);
   }
+
+
+
 
 
 

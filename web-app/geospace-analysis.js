@@ -150,13 +150,57 @@ function enteredIntersectionBuffer(buffer, fromStreet) {
   console.log(`From street_.     ${toString(fromStreet)}`);
 
   let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, buffer);
-  let directions = calculateDirections(availableStreets, fromStreet);
+  // let directions = calculateDirectionsViaCenters(availableStreets, fromStreet);
+
+  let directions = calculateDirectionsViaHardData(availableStreets, fromStreet);
 
 
   mWasInBuffer = true;
 }
 
-function calculateDirections(availableStreets, fromStreet) {
+function calculateDirectionsViaHardData(availableStreets, fromStreet) {
+
+
+  //extraer direccion de la calle disponible.
+  //armar objeto
+  //regresarlo
+
+
+  let fromStreetName = getFeatureName(fromStreet);
+
+  console.log(`Estoy por determinar la direccoin. Las calles disponibles son::::::\n\n\n\n${toString(availableStreets)}`);
+
+
+  let directions = [];
+
+  availableStreets.forEach(street => {
+
+    console.log(`from Street Name -> ${fromStreetName} `);
+    console.log(`Street to analyze \n\n${toString(street)}`);
+
+    let streetName = getFeatureName(street);
+
+    let orientation = (streetName === fromStreetName) ? "back" : street.properties.orientation[fromStreetName];
+    // let orientation = street.properties.orientation.fromStreetName;
+    let walked = mStreetsWalked.features.includes(street);
+
+    let obj = {
+      "streetName": streetName,
+      "orientation": orientation,
+      "walked": walked
+    };
+    directions.push(obj);
+  });
+
+
+  console.log(`Las instrucciones finales son::: \n\n${toString(directions)}`);
+
+
+
+
+}
+
+function calculateDirectionsViaCenters(availableStreets, fromStreet) {
 
   //calulcar centros.
   //Hacer analisis de angulo con bearing
@@ -171,9 +215,6 @@ function calculateDirections(availableStreets, fromStreet) {
   // let temp = streetCenters[1];
   // streetCenters[1] = streetCenters[2];
   // streetCenters[2] = temp;
-
-
-
 
   let sorted = streetCenters.sort((a, b) => {
     return a.properties.angle - b.properties.angle;
@@ -294,7 +335,7 @@ function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
   // UI.displayAvailableStreets(names);
   io.emit(events.DISPLAY_AVAILABLE_STREETS, names);
 
-
+  //Actualmente estoy regresando todas las calles en alguna interseccion dada, sin importar si ya la caminaste o no.
   return availableStreets;
 
 }

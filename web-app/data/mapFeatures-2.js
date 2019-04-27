@@ -3,7 +3,12 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "1-4"
+        "name": "1-4",
+        "orientation": {
+          "4-7": "straight",
+          "4-5": "right",
+          "1-2": "left"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -48,7 +53,14 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "5-8"
+        "name": "5-8",
+        "orientation": {
+          "2-5": "straight",
+          "4-5": "right",
+          "5-6": "left",
+          "7-8": "left",
+          "8-9": "right"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -68,7 +80,14 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "5-6"
+        "name": "5-6",
+        "orientation": {
+          "2-5": "left",
+          "4-5": "straight",
+          "5-8": "right",
+          "6-9": "left",
+          "3-6": "right"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -107,7 +126,14 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "4-5"
+        "name": "4-5",
+        "orientation": {
+          "1-4": "left",
+          "4-7": "right",
+          "2-5": "right",
+          "5-6": "straight",
+          "5-8": "left"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -170,7 +196,12 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "3-6"
+        "name": "3-6",
+        "orientation": {
+          "2-3": "right",
+          "5-6": "left",
+          "6-9": "straight"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -210,7 +241,12 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "7-8"
+        "name": "7-8",
+        "orientation": {
+          "4-7": "left",
+          "5-8": "right",
+          "8-9": "straight"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -230,7 +266,12 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "4-7"
+        "name": "4-7",
+        "orientation": {
+          "1-4": "straight",
+          "4-5": "left",
+          "7-8": "right"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -324,7 +365,12 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "6-9"
+        "name": "6-9",
+        "orientation": {
+          "5-6": "right",
+          "3-6": "straight",
+          "8-9": "left"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -344,7 +390,14 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "2-5"
+        "name": "2-5",
+        "orientation": {
+          "1-2": "right",
+          "2-3": "left",
+          "4-5": "left",
+          "5-6": "right",
+          "5-8": "straight"
+        }
       },
       "geometry": {
         "coordinates": [
@@ -401,7 +454,12 @@ module.exports = {
     {
       "type": "Feature",
       "properties": {
-        "name": "8-9"
+        "name": "8-9",
+        "orientation": {
+          "5-8": "left",
+          "7-8": "straight",
+          "6-9": "right"
+        }
       },
       "geometry": {
         "coordinates": [

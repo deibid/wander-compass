@@ -8,7 +8,9 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -47,7 +49,9 @@ import com.google.android.gms.tasks.Task;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -73,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Context mContext;
 
 
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 5000;
 
 
 
@@ -83,7 +87,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button scanBt;
     private TextView statusTv;
     private TextView resultTv;
-    private Button writeCharacteristicBt;
+    private Button writeCharacteristicLeft;
+    private Button writeCharacteristicStraight;
+    private Button writeCharacteristicRight;
     private int locationUpdates = 0;
 
     private Socket mSocket;
@@ -112,10 +118,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         mContext = this;
-
         mHandler = new Handler();
 
-//        startLEScan(true);
 
         locationTv = findViewById(R.id.location);
         updatesTv = findViewById(R.id.locationUpdates);
@@ -127,8 +131,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         statusTv = findViewById(R.id.scanStatusTv);
         resultTv = findViewById(R.id.scanResult);
 
-        writeCharacteristicBt = findViewById(R.id.writeCharacteristic);
-        writeCharacteristicBt.setOnClickListener(this);
+        writeCharacteristicLeft = findViewById(R.id.writeCharacteristicLeft);
+        writeCharacteristicLeft.setOnClickListener(this);
+
+        writeCharacteristicStraight = findViewById(R.id.writeCharacteristicStraight);
+        writeCharacteristicStraight.setOnClickListener(this);
+
+        writeCharacteristicRight = findViewById(R.id.writeCharacteristicRight);
+        writeCharacteristicRight.setOnClickListener(this);
 
 
 
@@ -391,36 +401,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
 
-    private void startLEScan(final boolean enable){
+    private void startLEScan(){
 
 
         final BluetoothLeScanner scanner = mBluetoothAdapter.getBluetoothLeScanner();
 
+        List<ScanFilter> leScanFilter = Arrays.asList(new ScanFilter[]{
+                        new ScanFilter.Builder()
+                                .setDeviceName(WANDER_COMPASS_NAME)
+                                .build()
+                });
+
+        ScanSettings.Builder builderScanSettings = new ScanSettings.Builder();
+        builderScanSettings.setScanMode(ScanSettings.SCAN_MODE_BALANCED);
+        builderScanSettings.setReportDelay(0);
+
 
         Log.d("Bluetooth","Scanning...");
-//        statusTv.setText(R.string.scanning);
+        statusTv.setText(R.string.scanning);
 
-        if(enable){
 
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mScanning = false;
-                    scanner.stopScan(mLeScanCallback);
-//                    scanBt.setEnabled(true);
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mScanning = false;
+                scanner.stopScan(mLeScanCallback);
+                scanBt.setEnabled(true);
 
-                }
-            },SCAN_PERIOD);
+            }
+        },SCAN_PERIOD);
 
-            scanner.startScan(mLeScanCallback);
-            mScanning = true;
-//            scanBt.setEnabled(false);
+        scanner.startScan(leScanFilter,builderScanSettings.build(),mLeScanCallback);
 
-        }else{
-            scanner.stopScan(mLeScanCallback);
-            mScanning = false;
-//            scanBt.setEnabled(true);
-        }
+        mScanning = true;
+        scanBt.setEnabled(false);
+
+
 
     }
 
@@ -431,28 +447,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             statusTv.setText("Scan Successful");
-            Log.d("Bluetooth Scan",result.toString());
-
-            String deviceName = result.getDevice().getName();
-            if(deviceName== null) return;
-
-            if(result.getDevice().getName().equals(WANDER_COMPASS_NAME)){
-                Log.d("Wander COmpass","Lo tengo");
-                mGatt = result.getDevice().connectGatt(mContext,true, mGattCallback);
-            }
+            Log.d("Wander Compass","Lo tengo");
+            mGatt = result.getDevice().connectGatt(mContext,true, mGattCallback);
         }
 
         @Override
         public void onBatchScanResults(List<ScanResult> results) {
             super.onBatchScanResults(results);
-            statusTv.setText("Results go here");
-            Log.d("Bluetooth Scan",results.toString());
+//            statusTv.setText("Results go here");
+//            Log.d("Bluetooth Scan",results.toString());
         }
 
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
             statusTv.setText("Scan Error");
+
         }
 
     };
@@ -462,12 +472,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             super.onConnectionStateChange(gatt, status, newState);
-
-
             if(newState == STATE_CONNECTED){
-
                 mGatt.discoverServices();
-
+                statusTv.setText("Connected!");
             }
         }
 
@@ -488,16 +495,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     };
 
 
-    private void writeLECharacteristic(){
+    private void writeLECharacteristic(int number){
 
 
         BluetoothGattCharacteristic characteristic =
                 mGatt.getService(WANDER_COMPASS_UUID).getCharacteristic(WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID);
 
 
-//        characteristic.setValue();
-//        characteristic.setValue(new byte[]={-1});
-        characteristic.setValue(10,BluetoothGattCharacteristic.FORMAT_UINT8,0);
+        characteristic.setValue(number,BluetoothGattCharacteristic.FORMAT_UINT8,0);
         mGatt.writeCharacteristic(characteristic);
 
     }
@@ -522,11 +527,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()){
 
             case R.id.scanBt:
-                startLEScan(true);
+                startLEScan();
                 break;
 
-            case R.id.writeCharacteristic:
-                writeLECharacteristic();
+            case R.id.writeCharacteristicLeft:
+                writeLECharacteristic(0);
+                break;
+
+            case R.id.writeCharacteristicStraight:
+                writeLECharacteristic(1);
+                break;
+
+            case R.id.writeCharacteristicRight:
+                writeLECharacteristic(2);
                 break;
 
         }

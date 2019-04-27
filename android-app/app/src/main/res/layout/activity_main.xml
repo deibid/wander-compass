@@ -79,7 +79,6 @@
         android:id="@+id/scanStatusTv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Scanning..."
         android:layout_marginTop="25dp"
         android:textSize="23sp" />
 
@@ -88,17 +87,37 @@
         android:id="@+id/scanResult"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Found wander compass!"
         android:layout_marginTop="25dp"
         android:textSize="23sp" />
 
 
-    <Button
-        android:id="@+id/writeCharacteristic"
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Write Command"
-        android:layout_marginTop="25dp"/>
+        android:orientation="horizontal"
+        android:gravity="center">
+
+
+        <Button
+            android:id="@+id/writeCharacteristicLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Left" />
+
+        <Button
+            android:id="@+id/writeCharacteristicStraight"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Straight" />
+
+        <Button
+            android:id="@+id/writeCharacteristicRight"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Right" />
+
+    </LinearLayout>
 
 
 

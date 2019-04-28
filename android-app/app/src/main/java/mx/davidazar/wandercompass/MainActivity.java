@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button writeCharacteristicLeft;
     private Button writeCharacteristicStraight;
     private Button writeCharacteristicRight;
+    private Button locationBt;
     private int locationUpdates = 0;
 
     private Socket mSocket;
@@ -141,6 +142,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         writeCharacteristicRight = findViewById(R.id.writeCharacteristicRight);
         writeCharacteristicRight.setOnClickListener(this);
 
+        locationBt = findViewById(R.id.locationBt);
+        locationBt.setOnClickListener(this);
 
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -190,7 +193,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        startLocationUpdates();
+
     }
 
 
@@ -511,6 +514,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.writeCharacteristicRight:
                 writeLECharacteristic(2);
+                break;
+
+            case R.id.locationBt:
+                startLocationUpdates();
                 break;
 
         }

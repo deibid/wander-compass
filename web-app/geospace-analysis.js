@@ -119,7 +119,10 @@ module.exports.onNewLocation = function (msg) {
     // };
 
     // io.emit(events.SEND_DIRECTIONS, directions);
-    enteredIntersectionBuffer(containingBuffer, closestStreet);
+
+
+    // ARREGLAR ESTO
+    // enteredIntersectionBuffer(containingBuffer, closestStreet);
   }
 
 

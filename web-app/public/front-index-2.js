@@ -170,7 +170,7 @@ function onNewLocation() {
   let snappedLng = turf.getCoord(snappedLocation)[0];
   let snappedLat = turf.getCoord(snappedLocation)[1];
 
-  // socket.emit("new-location-from-phone", { "lng": snappedLng, "lat": snappedLat });
+  socket.emit("new-location-from-phone", { "lng": snappedLng, "lat": snappedLat });
 
   // UI.displayStreet(getFeatureName(closestStreet));
 
@@ -476,8 +476,8 @@ function toString(Object) {
 
 socket.on('new-location-from-phone', (msg) => {
 
-  console.log("New Location ->> ");
-  console.log(toString(msg));
+  // console.log("New Location ->> ");
+  // console.log(toString(msg));
 
 });
 
@@ -516,7 +516,7 @@ socket.on("send-location-markers", (msg) => {
   let snapped = msg.snapped;
 
   snappedLocationMarker.setLngLat(snapped);
-  liveLocationMarker.setLngLat(real);
+  // liveLocationMarker.setLngLat(real);
 
 });
 

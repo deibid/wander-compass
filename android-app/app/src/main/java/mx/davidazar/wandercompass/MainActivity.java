@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int locationUpdates = 0;
 
     private Socket mSocket;
-    private static final String IP_ADDRESS = "10.17.209.0:3000";
+    private static final String IP_ADDRESS = "128.122.6.157:3000";
     private static final String EVENT_SEND_DIRECTIONS = "send-directions";
 
     private static final int LOCATION_PERMISSION_REQUEST = 0;
@@ -268,6 +268,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void call(Object... args) {
 
+
+                    Log.d("Recibí mesaje", args.toString());
 
                     JSONObject obj = (JSONObject)args[0];
                     Log.d("Recibí objeto", obj.toString());

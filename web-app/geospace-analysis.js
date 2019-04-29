@@ -48,7 +48,7 @@ module.exports.attachIO = function (_io) {
 }
 
 module.exports.test = () => {
-  console.log("Test function form another module");
+  // console.log("Test function form another module");
 }
 
 
@@ -86,7 +86,7 @@ module.exports.onNewLocation = function (msg) {
   // snappedLocationMarker.setLngLat(turf.getCoords(snappedLocation));
 
   let snappedLocationCoords = turf.getCoords(snappedLocation);
-  console.log(`snapped Location Coords ${snappedLocationCoords}`);
+  // console.log(`snapped Location Coords ${snappedLocationCoords}`);
 
   io.emit(events.DISPLAY_LOCATION, snappedLocationCoords);
   // UI.displayLocation(snappedLocationMarker.getLngLat());
@@ -140,7 +140,7 @@ module.exports.onNewLocation = function (msg) {
 
   //Exit buffer
   if (mWasInBuffer && containingBuffer === undefined) {
-    console.log(`Exited Buffer`);
+    // console.log(`Exited Buffer`);
     mWasInBuffer = false;
     // UI.displayActiveIntersection("-");
   }
@@ -149,8 +149,8 @@ module.exports.onNewLocation = function (msg) {
 
 function enteredIntersectionBuffer(buffer, fromStreet) {
 
-  console.log(`Entered Buffer ${toString(buffer)}`);
-  console.log(`From street_.     ${toString(fromStreet)}`);
+  // console.log(`Entered Buffer ${toString(buffer)}`);
+  // console.log(`From street_.     ${toString(fromStreet)}`);
 
   let availableStreets = getAvailableStreetsForDirections(mStreetsWalked, buffer);
   // let directions = calculateDirectionsViaCenters(availableStreets, fromStreet);
@@ -158,8 +158,12 @@ function enteredIntersectionBuffer(buffer, fromStreet) {
   let directions = calculateDirectionsViaHardData(availableStreets, fromStreet);
   let command = convertDirectionsToCommand(directions);
 
-  console.log(`Estoy a punto de mandar al android ${toString(command)}`);
-  io.emit(events.SEND_DIRECTIONS, command);
+  // console.log(`Estoy a punto de mandar al android ${toString(command)}`);
+  //Send a command to the phone if there are available streets
+  if (command !== -1) {
+    io.emit(events.SEND_DIRECTIONS, command);
+  }
+
 
 
   mWasInBuffer = true;
@@ -174,9 +178,9 @@ function convertDirectionsToCommand(directions) {
 
     if (!d.walked) {
       let orientationKey = getOrientationKey(d.orientation);
-      console.log(`Orientation KEY rest- >>> ${orientationKey}`);
+      // console.log(`Orientation KEY rest- >>> ${orientationKey}`);
       commandString = commandString.concat(orientationKey);
-      console.log(`COmmand string ->        ${commandString}`);
+      // console.log(`COmmand string ->        ${commandString}`);
     }
   });
 
@@ -189,7 +193,7 @@ function convertDirectionsToCommand(directions) {
   let instruction = {
     "to": finalCommand
   }
-  console.log(`Random command ->>>>   \n${instruction}`);
+  // console.log(`Random command ->>>>   \n${toString(instruction)}`);
   return instruction;
 
 
@@ -201,6 +205,7 @@ function getRandomTurnForDirection(commandString) {
   let options = commandString.length;
   let randomIndex = Math.floor(Math.random() * options);
 
+  // console.log(`The random index is_> ${randomIndex}`);
   return commandString.charAt(randomIndex);
 
 
@@ -208,7 +213,7 @@ function getRandomTurnForDirection(commandString) {
 
 function getOrientationKey(orientation) {
 
-  console.log(`Get orientation Key -> ${orientation}`);
+  // console.log(`Get orientation Key -> ${orientation}`);
 
   switch (orientation) {
     case "left":
@@ -229,15 +234,15 @@ function calculateDirectionsViaHardData(availableStreets, fromStreet) {
 
   let fromStreetName = getFeatureName(fromStreet);
 
-  console.log(`Estoy por determinar la direccoin. Las calles disponibles son::::::\n\n\n\n${toString(availableStreets)}`);
+  // console.log(`Estoy por determinar la direccoin. Las calles disponibles son::::::\n\n\n\n${toString(availableStreets)}`);
 
 
   let directions = [];
 
   availableStreets.forEach(street => {
 
-    console.log(`from Street Name -> ${fromStreetName} `);
-    console.log(`Street to analyze \n\n${toString(street)}`);
+    // console.log(`from Street Name -> ${fromStreetName} `);
+    // console.log(`Street to analyze \n\n${toString(street)}`);
 
     let streetName = getFeatureName(street);
 
@@ -250,11 +255,15 @@ function calculateDirectionsViaHardData(availableStreets, fromStreet) {
       "orientation": orientation,
       "walked": walked
     };
-    directions.push(obj);
+    //Only add the street as an option if it isn't to go back. Maybe someday I'll add another functionality to do this.
+    if (orientation !== "back") {
+      directions.push(obj);
+    }
+
   });
 
 
-  console.log(`Las instrucciones finales son::: \n\n${toString(directions)}`);
+  // console.log(`Las instrucciones finales son::: \n\n${toString(directions)}`);
 
   return directions;
 
@@ -269,7 +278,7 @@ function calculateDirectionsViaCenters(availableStreets, fromStreet) {
   //mandar hacia telefono
 
   let streetCenters = getCentersForStreetAtIntersections(availableStreets, fromStreet);
-  console.log(`Los centros son: \m ${toString(streetCenters)}`);
+  // console.log(`Los centros son: \m ${toString(streetCenters)}`);
 
   let fromStreetCenter = turf.getCoord(turf.center(fromStreet));
 
@@ -281,7 +290,7 @@ function calculateDirectionsViaCenters(availableStreets, fromStreet) {
     return a.properties.angle - b.properties.angle;
   });
 
-  console.log(`SORTED:_>   ${toString(sorted)}`);
+  // console.log(`SORTED:_>   ${toString(sorted)}`);
 
   // sorted.forEach(street => {
   //   console.log(`STREET TO ASSIGN    ${toString(street)}`);
@@ -290,7 +299,7 @@ function calculateDirectionsViaCenters(availableStreets, fromStreet) {
   // });
 
 
-  console.log(`Street with angle and status  ${toString(sorted)}`);
+  // console.log(`Street with angle and status  ${toString(sorted)}`);
   let directions = {};
 
 
@@ -385,7 +394,7 @@ function getAvailableStreetsForDirections(streetsWalked, containingBuffer) {
 
 
   let temp = availableStreets.filter(street => !mStreetsWalked.features.includes(street));
-  console.log(`Las calles NO caminadas para la interseccion ${containingBuffer.properties.name} son:__>   \n${toString(temp)}`);
+  // console.log(`Las calles NO caminadas para la interseccion ${containingBuffer.properties.name} son:__>   \n${toString(temp)}`);
 
 
   let names = "";
@@ -427,7 +436,7 @@ function getAvailableStreets() {
   let streetsWalkedNames = [];
 
   turf.featureEach(mStreetsWalked, (currentFeature, futureIndex) => {
-    console.log(`Esta calle ya se camino ${toString(currentFeature)}`);
+    // console.log(`Esta calle ya se camino ${toString(currentFeature)}`);
     let name = currentFeature.properties.name;
     if (streetsWalkedNames.indexOf(name) === -1)
       streetsWalkedNames.push(currentFeature.properties.name);
@@ -435,7 +444,7 @@ function getAvailableStreets() {
 
   let availableStreetsForIntersection = mActiveBuffer.properties.streets;
   let streetsNotWalked = availableStreetsForIntersection.filter(streetName => streetsWalkedNames.indexOf(streetName) !== 1);
-  console.log(`Las calles disponibles para la interseccion ${mActiveBuffer.properties.name} son: ${streetsNotWalked}`);
+  // console.log(`Las calles disponibles para la interseccion ${mActiveBuffer.properties.name} son: ${streetsNotWalked}`);
 
 }
 

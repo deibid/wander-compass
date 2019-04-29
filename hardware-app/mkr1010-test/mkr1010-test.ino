@@ -35,9 +35,26 @@ const int DIRECTIONS_REST = -1;
 int mPreviousDirection = DIRECTIONS_REST;
 
 
+int motor_left = 12;
+int motor_center = 13;
+int motor_right = 9;
+
+
+boolean displayConnectionStatus = true;
+
+
 void setup() {
-  Serial.begin(9600);
-  while (!Serial);
+
+  pinMode(motor_left, OUTPUT);
+  pinMode(motor_center, OUTPUT);
+  pinMode(motor_right, OUTPUT);
+
+  analogWrite(motor_left,0);
+  analogWrite(motor_center,0);
+  analogWrite(motor_right,0);
+  
+//  Serial.begin(9600);
+//  while (!Serial);
 
   pinMode(ledPin, OUTPUT); // use the LED as an output
   pinMode(buttonPin, INPUT_PULLUP); // use button pin as an input
@@ -73,12 +90,27 @@ void setup() {
   // start advertising
   BLE.advertise();
 
-  Serial.println("Bluetooth device active, waiting for connections...");
+//  Serial.println("Bluetooth device active, waiting for connections...");
+
+
+  
+  
+
+
 }
 
 void loop() {
   // poll for BLE events
   BLE.poll();
+
+  if(BLE.connected() && displayConnectionStatus){
+//    Serial.println("DEVICE CONNECTED");
+    displayConnectionStatus = false;
+  }
+
+  if(!BLE.connected()){
+    displayConnectionStatus = true;
+  }
 
   // read the current button pin state
   char buttonValue = digitalRead(buttonPin);
@@ -95,10 +127,10 @@ void loop() {
   if (ledCharacteristic.written() || buttonChanged) {
     // update LED, either central has written to characteristic or button state has changed
     if (ledCharacteristic.value()) {
-      Serial.println("LED on");
+//      Serial.println("LED on");
       digitalWrite(ledPin, HIGH);
     } else {
-      Serial.println("LED off");
+//      Serial.println("LED off");
       digitalWrite(ledPin, LOW);
     }
   }
@@ -109,14 +141,50 @@ void loop() {
 
 
   if (directions != DIRECTIONS_REST && directions != 255) {
-    
-    Serial.println("Tengo direcciones del Wander Compass");
-    Serial.println("Tu siguiente direccion es:");
-    Serial.println(directions);
-    
+
+//    Serial.println("Tengo direcciones del Wander Compass");
+//    Serial.println("Tu siguiente direccion es:");
+//    Serial.println(directions);
+
+
+    int motor;
+
+    switch (directions) {
+
+      case 0:
+
+        motor = motor_left;
+        break;
+
+      case 1:
+        motor = motor_center;
+        break;
+
+      case 2:
+        motor = motor_right;
+        break;
+
+    }
+
+    turnOnMotor(motor);
+
+
+
     directionCharacteristic.writeValue(DIRECTIONS_REST);
-  
+
   }
+
+
+
+}
+
+
+void turnOnMotor(int motor) {
+
+
+  analogWrite(motor, 255);
+  delay(1000);
+  analogWrite(motor, 0);
 
 
 

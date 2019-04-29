@@ -95,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int locationUpdates = 0;
 
     private Socket mSocket;
+    private static final String IP_ADDRESS = "10.17.209.0:3000";
     private static final String EVENT_SEND_DIRECTIONS = "send-directions";
 
     private static final int LOCATION_PERMISSION_REQUEST = 0;
@@ -254,7 +255,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try{
 
 
-            mSocket = IO.socket("http://192.168.1.3:3000");
+            mSocket = IO.socket("http://"+IP_ADDRESS);
             mSocket.connect();
 
 

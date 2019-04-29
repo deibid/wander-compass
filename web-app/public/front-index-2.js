@@ -3,6 +3,27 @@ let socket = io();
 const EVENT_NEW_LOCATION = "new-location-from-phone";
 
 
+
+const demoWalkPoints = [
+  [-73.99361505820534, 40.72916288174916],
+  [-73.99345800227826, 40.72934843442177],
+  [-73.99333940611872, 40.72948854905974],
+  [-73.99335270012688, 40.72962501078616],
+  [-73.99364853517395, 40.7297718216948],
+  [-73.99376536713392, 40.72982980064751],
+  [-73.99395803991895, 40.72992541631889],
+  [-73.99393410368494, 40.72991353773891],
+  "straight",
+  [-73.99414700316358, 40.73001878887299],
+  [-73.99443761755607, 40.730161600701265],
+
+
+
+];
+
+
+
+
 function sendEvent() {
 
 
@@ -42,21 +63,21 @@ let mActiveBuffer;
 let mWasInBuffer = false;
 
 
-let angleP1 = turf.point([-73.983802, 40.729290]);
-let angleP2 = turf.point([-73.983885, 40.729520]);
-let angleP3 = turf.point([-73.984236, 40.729485]);
-let angleP4 = turf.point([-73.984156, 40.729175]);
+// let angleP1 = turf.point([-73.983802, 40.729290]);
+// let angleP2 = turf.point([-73.983885, 40.729520]);
+// let angleP3 = turf.point([-73.984236, 40.729485]);
+// let angleP4 = turf.point([-73.984156, 40.729175]);
 
 
 
 
-let angle = turf.rhumbBearing(angleP1, angleP2);
-let angle2 = turf.rhumbBearing(angleP1, angleP3);
-let angle3 = turf.rhumbBearing(angleP1, angleP4);
+// let angle = turf.rhumbBearing(angleP1, angleP2);
+// let angle2 = turf.rhumbBearing(angleP1, angleP3);
+// let angle3 = turf.rhumbBearing(angleP1, angleP4);
 
-console.log(`Angle 1-> ${angle}`);
-console.log(`Angle 2-> ${angle2}`);
-console.log(`Angle 3-> ${angle3}`);
+// console.log(`Angle 1-> ${angle}`);
+// console.log(`Angle 2-> ${angle2}`);
+// console.log(`Angle 3-> ${angle3}`);
 
 
 
@@ -82,9 +103,11 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRhemFyIiwiYSI6ImNqdWFrZnk5ODAzbjU0NHBnc
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/davidazar/cjukkxnww88nb1fqtgh1ovfmj',
-  center: [-73.993944, 40.729499],
-  zoom: 16.6
+  center: [-73.9948575010615, 40.729557253796266],
+  zoom: 17
 });
+
+
 
 
 map.on('load', () => {
@@ -150,7 +173,7 @@ liveLocationMarker.on('drag', onNewLocation);
 // Function executed when dragging. This will get changed to a live location pushed from the phone
 function onNewLocation() {
 
-  console.log("Drag");
+  // console.log("Drag");
 
   //get a MapBox object with coordinates
   let liveLocation = liveLocationMarker.getLngLat();
@@ -161,7 +184,7 @@ function onNewLocation() {
   let liveLocationPoint = turf.point([liveLng, liveLat]);
 
 
-  console.log(`liveLocationPoint   ${toString(liveLocationPoint)}`);
+  // console.log(`liveLocationPoint   ${toString(liveLocationPoint)}`);
   //Get the closest line on a MapBox street from the Point
   //Find the nearest point inside a street to snap to
   let closestStreet = closestLineToPoint(liveLocationPoint, _mapFeatures);

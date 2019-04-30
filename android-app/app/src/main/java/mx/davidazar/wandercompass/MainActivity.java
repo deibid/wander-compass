@@ -95,17 +95,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private int locationUpdates = 0;
 
     private Socket mSocket;
-    private static final String IP_ADDRESS = "128.122.6.157:3000";
+    private static final String IP_ADDRESS = "10.17.209.0:3000";
     private static final String EVENT_SEND_DIRECTIONS = "send-directions";
 
     private static final int LOCATION_PERMISSION_REQUEST = 0;
     private static final int REQUEST_ENABLE_INTENT = 1;
 
 
-    private static final UUID WANDER_COMPASS_UUID = UUID.fromString("19b10010-e8f2-537e-4f6c-d104768a1214");
-    private static final UUID WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID = UUID.fromString("19b10013-e8f2-537e-4f6c-d104768a1214");
-    private static final String WANDER_COMPASS_NAME = "Wander Compass";
+    //MKR 1010 Version
+//    private static final UUID WANDER_COMPASS_UUID = UUID.fromString("19b10010-e8f2-537e-4f6c-d104768a1214");
+//    private static final UUID WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID = UUID.fromString("19b10013-e8f2-537e-4f6c-d104768a1214");
+//    private static final String WANDER_COMPASS_NAME = "Wander Compass";
 
+    //RedBear Nano V2 Version
+    private static final UUID WANDER_COMPASS_UUID = UUID.fromString("713d0000-503e-4c75-ba94-3148f18d941e");
+    private static final UUID WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID = UUID.fromString("713d0002-503e-4c75-ba94-3148f18d941e");
+    private static final String WANDER_COMPASS_NAME = "WanderCompass";
 
 
 
@@ -124,8 +129,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mHandler = new Handler();
 
 
-        locationTv = findViewById(R.id.location);
-        updatesTv = findViewById(R.id.locationUpdates);
+        locationTv = findViewById(R.id.locationTv);
+        updatesTv = findViewById(R.id.locationUpdatesTv);
 
         scanBt = findViewById(R.id.scanBt);
         scanBt.setOnClickListener(this);

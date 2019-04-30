@@ -103,8 +103,9 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWRhemFyIiwiYSI6ImNqdWFrZnk5ODAzbjU0NHBnc
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/davidazar/cjukkxnww88nb1fqtgh1ovfmj',
-  center: [-73.9948575010615, 40.729557253796266],
-  zoom: 17
+  center: [-73.99428794374874, 40.729277133361386],
+  zoom: 17,
+  dragPan: false
 });
 
 

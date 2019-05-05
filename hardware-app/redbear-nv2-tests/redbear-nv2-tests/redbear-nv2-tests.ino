@@ -1,3 +1,5 @@
+#include <Bounce2.h>
+
 /*
    Copyright (c) 2016 RedBear
 
@@ -25,6 +27,9 @@ Ticker                    ticker1s;
 int motor_left = D2;
 int motor_center = D5;
 int motor_right = D0;
+int button = D4;
+
+Bounce debouncer = Bounce();
 
 // The uuid of service and characteristics
 static const uint8_t service1_uuid[]         = {0x71, 0x3D, 0, 0, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E};
@@ -229,6 +234,11 @@ void setup() {
   pinMode(motor_center, OUTPUT);
   pinMode(motor_right, OUTPUT);
 
+  debouncer.attach(button, INPUT);
+  debouncer.interval(25);
+  
+  //  pinMode(button, INPUT_PULLUP);
+
   analogWrite(motor_left, 0);
   analogWrite(motor_center, 0);
   analogWrite(motor_right, 0);
@@ -309,7 +319,16 @@ void turnOnMotor(int motor) {
 }
 
 void loop() {
+  
   ble.waitForEvent();
+  debouncer.update();
 
-//  analogWrite(D5,255);
+  if(debouncer.rose()){
+    digitalWrite(motor_left,HIGH);
+  }else{
+    digitalWrite(motor_left,LOW);
+  }
+
+
+  //  analogWrite(D5,255);
 }

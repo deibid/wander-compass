@@ -145,31 +145,19 @@ void loop() {
 //    Serial.println("Tengo direcciones del Wander Compass");
 //    Serial.println("Tu siguiente direccion es:");
 //    Serial.println(directions);
-
-
     int motor;
-
     switch (directions) {
-
       case 0:
-
         motor = motor_left;
         break;
-
       case 1:
         motor = motor_center;
         break;
-
       case 2:
         motor = motor_right;
         break;
-
     }
-
     turnOnMotor(motor);
-
-
-
     directionCharacteristic.writeValue(DIRECTIONS_REST);
 
   }

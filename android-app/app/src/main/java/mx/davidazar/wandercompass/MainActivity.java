@@ -49,8 +49,8 @@ import com.google.android.gms.tasks.Task;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Array;
 import java.net.URISyntaxException;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -82,8 +82,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final long SCAN_PERIOD = 5000;
 
 
-
-
     private TextView locationTv;
     private TextView updatesTv;
     private Button scanBt;
@@ -91,8 +89,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button writeCharacteristicLeft;
     private Button writeCharacteristicStraight;
     private Button writeCharacteristicRight;
-    private Button locationBt;
+    private Button gpsToggleBt;
     private int locationUpdates = 0;
+    private boolean mTrackingLocation = false;
 
     private Socket mSocket;
     private static final String IP_ADDRESS = "10.17.209.0:3000";
@@ -148,19 +147,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         writeCharacteristicRight = findViewById(R.id.writeCharacteristicRight);
         writeCharacteristicRight.setOnClickListener(this);
 
-        locationBt = findViewById(R.id.locationBt);
-        locationBt.setOnClickListener(this);
+        gpsToggleBt = findViewById(R.id.locationBt);
+        gpsToggleBt.setOnClickListener(this);
 
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            Log.d("Perm","Not Granted");
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    LOCATION_PERMISSION_REQUEST);
 
-        }else{
-            Log.d("Perm","Permission granted");
-        }
 
 
         createLocationRequest();
@@ -180,7 +171,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Log.d("Location Result loop",location.toString());
                     double lng = location.getLongitude();
                     double lat = location.getLatitude();
-                    locationTv.setText(String.valueOf(lat) +"  ,  "+String.valueOf(lng));
+                    String msg = formatDouble(lng)+" , "+formatDouble(lat);
+                    locationTv.setText(msg);
                     sendLocationToServer(lng,lat);
                 }
 
@@ -196,19 +188,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-    }
-
 
 
     private void startLocationUpdates(){
 
+        mTrackingLocation = true;
+        gpsToggleBt.setText(R.string.stop_gps_tracking);
 
-        fusedLocationClient.requestLocationUpdates(locationRequest,locationCallback,null);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            Log.d("Perm","Not Granted");
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST);
 
+        }else{
+            fusedLocationClient.requestLocationUpdates(locationRequest,locationCallback,null);
+            Log.d("Perm","Permission granted");
+        }
+
+
+    }
+
+
+    private void stopLocationUpdates(){
+        mTrackingLocation = true;
+        gpsToggleBt.setText(R.string.start_gps_tracking);
+        locationTv.setText("");
+        updatesTv.setText("");
+        fusedLocationClient.removeLocationUpdates(locationCallback);
     }
 
 
@@ -297,28 +304,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             });
 
-
-//            mSocket.io().on(Manager.EVENT_TRANSPORT, new Emitter.Listener() {
-//                @Override
-//                public void call(Object... args) {
-//                    Transport transport = (Transport) args[0];
-//                    transport.on(Transport.EVENT_ERROR, new Emitter.Listener() {
-//                        @Override
-//                        public void call(Object... args) {
-//                            Exception e = (Exception) args[0];
-//                            Log.e("Transport", "Transport error " + e);
-//                            e.printStackTrace();
-//                            e.getCause().printStackTrace();
-//                        }
-//                    });
-//                }
-//            });
-
-
-
-
-
-
         }catch(URISyntaxException e){
             Log.d("Error",e.toString());
         }
@@ -390,6 +375,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void run() {
                 scanner.stopScan(mLeScanCallback);
                 scanBt.setEnabled(true);
+                statusTv.setText(R.string.ble_standby);
 
             }
         },SCAN_PERIOD);
@@ -440,6 +426,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mGatt.discoverServices();
                 statusTv.setText("Connected!");
 
+                writeCharacteristicLeft.setEnabled(true);
+                writeCharacteristicStraight.setEnabled(true);
+                writeCharacteristicRight.setEnabled(true);
+
+
             }
 
             if(newState == STATE_CONNECTING){
@@ -448,17 +439,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             if(newState == STATE_DISCONNECTED){
                 mDeviceConnected = false;
+                statusTv.setText(R.string.ble_standby);
+                writeCharacteristicLeft.setEnabled(false);
+                writeCharacteristicStraight.setEnabled(false);
+                writeCharacteristicRight.setEnabled(false);
             }
         }
 
-        @Override
-        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            super.onServicesDiscovered(gatt, status);
-
-            BluetoothGattCharacteristic characteristic =
-                    gatt.getService(WANDER_COMPASS_UUID).getCharacteristic(WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID);
-
-        }
+//        @Override
+//        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+//            super.onServicesDiscovered(gatt, status);
+//
+//            BluetoothGattCharacteristic characteristic =
+//                    gatt.getService(WANDER_COMPASS_UUID).getCharacteristic(WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID);
+//
+//        }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
@@ -470,15 +465,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void writeLECharacteristic(int number){
 
-        Log.d("Write","WRITE CHARR");
-
-        Log.d("Write",""+mDeviceConnected);
-
-
         if(!mDeviceConnected)return;
-
-        Log.d("WanderCompass Final","Escribiendo "+number);
-
 
         BluetoothGattCharacteristic characteristic =
                 mGatt.getService(WANDER_COMPASS_UUID).getCharacteristic(WANDER_COMPASS_DIRECTION_CHARACTERISTIC_UUID);
@@ -525,7 +512,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.locationBt:
-                startLocationUpdates();
+
+                if(!mTrackingLocation){
+                    updatesTv.setText(R.string.getting_gps_location);
+                    startLocationUpdates();
+                }else{
+                    stopLocationUpdates();
+                }
+
                 break;
 
         }
@@ -534,5 +528,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
+
+
+    private String formatDouble(double d){
+
+        DecimalFormat df = new DecimalFormat("#.######");
+        return df.format(d);
+
+
+    }
 
 }
